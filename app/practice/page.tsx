@@ -9,6 +9,7 @@ import { QuestionCard, type Question } from "@/components/QuestionCard";
 import { ScoreSummary } from "@/components/ScoreSummary";
 import { ExamScoreBreakdown } from "@/components/ExamScoreBreakdown";
 import { Button } from "@/components/ui/button";
+import { Navbar } from "@/components/Navbar";
 import { getExamQuestionCount, getExamTimeMinutes } from "@/lib/exam-config";
 
 type SubjectRow = { id: number; name: string; grade: number };
@@ -267,28 +268,33 @@ export default function PracticePage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center p-4">
-        <p className="text-muted-foreground">Loading…</p>
-      </main>
+      <>
+        <Navbar />
+        <main className="flex min-h-screen items-center justify-center p-4">
+          <p className="text-muted-foreground">Loading…</p>
+        </main>
+      </>
     );
   }
 
   return (
-    <main className="min-h-screen p-6">
-      <div className="mx-auto max-w-2xl space-y-6">
-        <div className="flex items-center justify-between">
-          <Link href="/dashboard" className="text-sm text-muted-foreground hover:underline">
-            ← Dashboard
-          </Link>
-        </div>
+    <>
+      <Navbar />
+      <main className="min-h-screen p-4 sm:p-6">
+        <div className="mx-auto max-w-2xl space-y-6">
+          <div className="flex items-center justify-between">
+            <Link href="/dashboard" className="text-sm text-muted-foreground hover:underline">
+              ← Dashboard
+            </Link>
+          </div>
 
-        {questions.length === 0 ? (
-          <div className="rounded-lg border bg-card p-6 shadow-sm space-y-4">
-            <h1 className="text-xl font-bold">Practice</h1>
+          {questions.length === 0 ? (
+            <div className="rounded-lg border bg-card p-6 shadow-sm space-y-4">
+              <h1 className="text-xl font-bold">Practice</h1>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Mode</label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Mode</label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => setMode("practice")}
@@ -331,12 +337,12 @@ export default function PracticePage() {
                     With explanations
                   </span>
                 </button>
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Subject & grade</label>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Subject & grade</label>
+                <div className="grid gap-3 sm:grid-cols-2">
                 <select
                   className="select-theme h-11 w-full rounded-lg border-2 border-border bg-muted/80 pl-3 pr-10 py-2 text-sm text-foreground transition-colors hover:border-primary/50 hover:bg-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                   value={subjectName}
@@ -363,109 +369,110 @@ export default function PracticePage() {
                     </option>
                   ))}
                 </select>
+                </div>
               </div>
+
+              {subjectName && grade !== "" && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Past exam year</label>
+                  <select
+                    className="select-theme h-11 w-full rounded-lg border-2 border-border bg-muted/80 pl-3 pr-10 py-2 text-sm text-foreground transition-colors hover:border-primary/50 hover:bg-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 sm:max-w-[12rem]"
+                    value={selectedYear ?? ""}
+                    onChange={(e) => setSelectedYear(e.target.value ? Number(e.target.value) : null)}
+                  >
+                    <option value="">All Years</option>
+                    {availableYears.map((y) => (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <Button onClick={loadQuestions} disabled={!canStart} className="w-full sm:w-auto">
+                {startLabel}
+              </Button>
             </div>
-
-            {subjectName && grade !== "" && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Past exam year</label>
-                <select
-                  className="select-theme h-11 w-full rounded-lg border-2 border-border bg-muted/80 pl-3 pr-10 py-2 text-sm text-foreground transition-colors hover:border-primary/50 hover:bg-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 sm:max-w-[12rem]"
-                  value={selectedYear ?? ""}
-                  onChange={(e) => setSelectedYear(e.target.value ? Number(e.target.value) : null)}
-                >
-                  <option value="">All Years</option>
-                  {availableYears.map((y) => (
-                    <option key={y} value={y}>
-                      {y}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            <Button onClick={loadQuestions} disabled={!canStart}>
-              {startLabel}
-            </Button>
-          </div>
-        ) : showExamResult && examResult ? (
-          <ExamScoreBreakdown
-            score={examResult.score}
-            total={examResult.total}
-            wrongEntries={examResult.wrongEntries}
-            onBack={handleBackToStart}
-          />
-        ) : showSummary ? (
-          <div className="space-y-4">
-            <ScoreSummary
-              score={score}
-              total={questions.length}
-              onLogSession={handleLogSession}
-              logging={logging}
+          ) : showExamResult && examResult ? (
+            <ExamScoreBreakdown
+              score={examResult.score}
+              total={examResult.total}
+              wrongEntries={examResult.wrongEntries}
+              onBack={handleBackToStart}
             />
-            {sessionLogged && (
-              <Button asChild variant="outline" className="w-full">
-                <Link href="/dashboard">Back to Dashboard</Link>
-              </Button>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {mode !== "practice" && (
-              <div className="flex flex-col gap-2 rounded-lg border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="text-sm font-medium">
-                  Question {currentIndex + 1} / {questions.length}
-                  {selectedYear != null && (
-                    <span className="ml-2 text-muted-foreground">· {selectedYear}</span>
-                  )}
-                </div>
-                <div className="h-2 flex-1 rounded-full bg-muted sm:mx-4">
-                  <div
-                    className="h-full rounded-full bg-primary transition-all"
-                    style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
-                  />
-                </div>
-                <div className="text-sm font-mono tabular-nums">
-                  {isExam && examSecondsLeft !== null && (
-                    <>
-                      {Math.floor(examSecondsLeft / 60)}:
-                      {String(examSecondsLeft % 60).padStart(2, "0")}
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-            <QuestionCard
-              key={questions[currentIndex].id}
-              question={questions[currentIndex]}
-              questionNumber={currentIndex + 1}
-              total={questions.length}
-              onSelect={handleSelectAnswer}
-              selectedAnswer={isExam ? (examAnswers[currentIndex] ?? null) : selectedAnswer}
-              showResult={showResult}
-              isCorrect={
-                !isExam && selectedAnswer
-                  ? questions[currentIndex].correct_answer === selectedAnswer
-                  : null
-              }
-              subject={subjectName}
-              examMode={isExam}
-            />
-            {isExam ? (
-              <Button onClick={handleNext} className="w-full">
-                {currentIndex + 1 >= questions.length ? "Submit exam" : "Next"}
-              </Button>
-            ) : (
-              showResult &&
-              currentIndex + 1 < questions.length && (
-                <Button onClick={handleNext} className="w-full">
-                  Next
+          ) : showSummary ? (
+            <div className="space-y-4">
+              <ScoreSummary
+                score={score}
+                total={questions.length}
+                onLogSession={handleLogSession}
+                logging={logging}
+              />
+              {sessionLogged && (
+                <Button asChild variant="outline" className="w-full">
+                  <Link href="/dashboard">Back to Dashboard</Link>
                 </Button>
-              )
-            )}
-          </div>
-        )}
-      </div>
-    </main>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {mode !== "practice" && (
+                <div className="flex flex-col gap-2 rounded-lg border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="text-sm font-medium">
+                    Question {currentIndex + 1} / {questions.length}
+                    {selectedYear != null && (
+                      <span className="ml-2 text-muted-foreground">· {selectedYear}</span>
+                    )}
+                  </div>
+                  <div className="h-2 flex-1 rounded-full bg-muted sm:mx-4">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all"
+                      style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
+                    />
+                  </div>
+                  <div className="text-sm font-mono tabular-nums">
+                    {isExam && examSecondsLeft !== null && (
+                      <>
+                        {Math.floor(examSecondsLeft / 60)}:
+                        {String(examSecondsLeft % 60).padStart(2, "0")}
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+              <QuestionCard
+                key={questions[currentIndex].id}
+                question={questions[currentIndex]}
+                questionNumber={currentIndex + 1}
+                total={questions.length}
+                onSelect={handleSelectAnswer}
+                selectedAnswer={isExam ? (examAnswers[currentIndex] ?? null) : selectedAnswer}
+                showResult={showResult}
+                isCorrect={
+                  !isExam && selectedAnswer
+                    ? questions[currentIndex].correct_answer === selectedAnswer
+                    : null
+                }
+                subject={subjectName}
+                examMode={isExam}
+              />
+              {isExam ? (
+                <Button onClick={handleNext} className="w-full">
+                  {currentIndex + 1 >= questions.length ? "Submit exam" : "Next"}
+                </Button>
+              ) : (
+                showResult &&
+                currentIndex + 1 < questions.length && (
+                  <Button onClick={handleNext} className="w-full">
+                    Next
+                  </Button>
+                )
+              )}
+            </div>
+          )}
+        </div>
+      </main>
+    </>
   );
 }

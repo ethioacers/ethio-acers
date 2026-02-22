@@ -39,6 +39,7 @@ const config: Config = {
           DEFAULT: "hsl(var(--background))",
           foreground: "hsl(var(--foreground))",
         },
+        gold: "hsl(var(--gold))",
       },
       borderRadius: {
         lg: "var(--radius)",

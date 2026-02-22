@@ -9,6 +9,7 @@ function getPreviousDay(dateStr: string): string {
 export type Profile = {
   id: string;
   full_name: string | null;
+  school_name?: string | null;
   grade: number | null;
   current_streak: number;
   last_session_date: string | null;

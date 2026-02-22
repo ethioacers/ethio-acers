@@ -60,11 +60,11 @@ export function QuestionCard({
   const showFeedback = showResult && !examMode;
 
   return (
-    <div className="rounded-lg border bg-card p-6 shadow-sm space-y-6">
+    <div className="rounded-lg border bg-card p-4 sm:p-6 shadow-sm space-y-6">
       <p className="text-sm text-muted-foreground">
         Question {questionNumber} of {total}
       </p>
-      <p className="text-lg font-medium">{question.question_text}</p>
+      <p className="text-base sm:text-lg font-medium">{question.question_text}</p>
       <div className="space-y-2">
         {options.map(({ key, text }) => {
           const chosen = selectedAnswer === key;
@@ -84,7 +84,7 @@ export function QuestionCard({
               type="button"
               disabled={showFeedback}
               onClick={() => onSelect(key)}
-              className={`w-full rounded-md px-4 py-3 text-left text-sm transition-colors ${style}`}
+              className={`w-full rounded-md px-4 py-3 min-h-[44px] text-left text-sm sm:text-base transition-colors ${style}`}
             >
               <span className="font-medium">{key}.</span> {text}
             </button>

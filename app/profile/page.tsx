@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Navbar } from "@/components/Navbar";
 
 const GRADES = [9, 10, 11, 12];
 
@@ -107,9 +108,12 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center p-4">
-        <p className="text-muted-foreground">Loading…</p>
-      </main>
+      <>
+        <Navbar />
+        <main className="flex min-h-screen items-center justify-center p-4">
+          <p className="text-muted-foreground">Loading…</p>
+        </main>
+      </>
     );
   }
 
@@ -119,92 +123,100 @@ export default function ProfilePage() {
     createdAt ? new Date(createdAt).toLocaleDateString(undefined, { dateStyle: "medium" }) : "—";
 
   return (
-    <main className="min-h-screen p-6">
-      <div className="mx-auto max-w-lg space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Profile</h1>
-          <Link
-            href="/dashboard"
-            className="text-sm text-muted-foreground hover:underline"
-          >
-            ← Dashboard
-          </Link>
-        </div>
-
-        <form onSubmit={handleSave} className="space-y-6 rounded-lg border bg-card p-6 shadow-sm">
-          <div className="space-y-2">
-            <Label htmlFor="fullName">Full name</Label>
-            <Input
-              id="fullName"
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              autoComplete="name"
-              className="bg-muted/80"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="schoolName">School name</Label>
-            <Input
-              id="schoolName"
-              type="text"
-              value={schoolName}
-              onChange={(e) => setSchoolName(e.target.value)}
-              placeholder="Your school"
-              className="bg-muted/80"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="grade">Grade</Label>
-            <select
-              id="grade"
-              className="select-theme h-10 w-full rounded-md border border-input bg-muted/80 px-3 py-2 text-sm text-foreground"
-              value={grade}
-              onChange={(e) => setGrade(e.target.value ? Number(e.target.value) : "")}
+    <>
+      <Navbar />
+      <main className="min-h-screen p-4 sm:p-6">
+        <div className="mx-auto max-w-lg space-y-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <h1 className="text-2xl font-bold">Profile</h1>
+            <Link
+              href="/dashboard"
+              className="text-sm text-muted-foreground hover:underline"
             >
-              <option value="">Select grade</option>
-              {GRADES.map((g) => (
-                <option key={g} value={g}>
-                  Grade {g}
-                </option>
-              ))}
-            </select>
+              ← Dashboard
+            </Link>
           </div>
-          <div className="space-y-2">
-            <Label>Email</Label>
-            <Input
-              type="email"
-              value={email}
-              readOnly
-              disabled
-              className="bg-muted/50 cursor-not-allowed opacity-90"
-            />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="outline" onClick={handleChangePassword}>
-              Change password
+
+          <form onSubmit={handleSave} className="space-y-6 rounded-lg border bg-card p-6 shadow-sm">
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Full name</Label>
+              <Input
+                id="fullName"
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                autoComplete="name"
+                className="bg-muted/80"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="schoolName">School name</Label>
+              <Input
+                id="schoolName"
+                type="text"
+                value={schoolName}
+                onChange={(e) => setSchoolName(e.target.value)}
+                placeholder="Your school"
+                className="bg-muted/80"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="grade">Grade</Label>
+              <select
+                id="grade"
+                className="select-theme h-10 w-full rounded-md border border-input bg-muted/80 px-3 py-2 text-sm text-foreground"
+                value={grade}
+                onChange={(e) => setGrade(e.target.value ? Number(e.target.value) : "")}
+              >
+                <option value="">Select grade</option>
+                {GRADES.map((g) => (
+                  <option key={g} value={g}>
+                    Grade {g}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={email}
+                readOnly
+                disabled
+                className="bg-muted/50 cursor-not-allowed opacity-90"
+              />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleChangePassword}
+                className="w-full sm:w-auto"
+              >
+                Change password
+              </Button>
+            </div>
+            <div className="space-y-2">
+              <Label>Account created</Label>
+              <p className="text-sm text-muted-foreground">{createdDate}</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Total questions answered</Label>
+              <p className="text-sm text-muted-foreground">{totalAttempts}</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Overall accuracy</Label>
+              <p className="text-sm text-muted-foreground">{accuracy}%</p>
+            </div>
+            {success && (
+              <p className="text-sm text-green-600">Profile saved successfully.</p>
+            )}
+            <Button type="submit" disabled={saving} className="w-full sm:w-auto">
+              {saving ? "Saving…" : "Save"}
             </Button>
-          </div>
-          <div className="space-y-2">
-            <Label>Account created</Label>
-            <p className="text-sm text-muted-foreground">{createdDate}</p>
-          </div>
-          <div className="space-y-2">
-            <Label>Total questions answered</Label>
-            <p className="text-sm text-muted-foreground">{totalAttempts}</p>
-          </div>
-          <div className="space-y-2">
-            <Label>Overall accuracy</Label>
-            <p className="text-sm text-muted-foreground">{accuracy}%</p>
-          </div>
-          {success && (
-            <p className="text-sm text-green-600">Profile saved successfully.</p>
-          )}
-          <Button type="submit" disabled={saving}>
-            {saving ? "Saving…" : "Save"}
-          </Button>
-        </form>
-      </div>
-    </main>
+          </form>
+        </div>
+      </main>
+    </>
   );
 }
