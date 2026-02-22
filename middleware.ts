@@ -1,10 +1,19 @@
-import { type NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
 const protectedPaths = ["/dashboard", "/practice", "/profile"];
 
 export async function middleware(request: NextRequest) {
-  const { response, user } = await updateSession(request);
+  let response: NextResponse;
+  let user = null;
+  try {
+    const result = await updateSession(request);
+    response = result.response;
+    user = result.user;
+  } catch (err) {
+    console.error("middleware error:", err);
+    return NextResponse.next();
+  }
 
   const path = request.nextUrl.pathname;
   const isProtected = protectedPaths.some((p) => path.startsWith(p));
@@ -14,7 +23,7 @@ export async function middleware(request: NextRequest) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/login";
     redirectUrl.searchParams.set("redirectTo", path);
-    return Response.redirect(redirectUrl);
+    return NextResponse.redirect(redirectUrl);
   }
 
   if (isLogin && user) {
@@ -22,7 +31,7 @@ export async function middleware(request: NextRequest) {
     redirectUrl.pathname =
       request.nextUrl.searchParams.get("redirectTo") ?? "/dashboard";
     redirectUrl.searchParams.delete("redirectTo");
-    return Response.redirect(redirectUrl);
+    return NextResponse.redirect(redirectUrl);
   }
 
   return response;

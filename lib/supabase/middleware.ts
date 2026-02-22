@@ -10,6 +10,12 @@ export async function updateSession(request: NextRequest): Promise<{
     request,
   });
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    return { response, user: null };
+  }
+
   type CookieToSet = {
     name: string;
     value: string;
@@ -19,8 +25,8 @@ export async function updateSession(request: NextRequest): Promise<{
   };
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseKey,
     {
       cookies: {
         getAll() {
