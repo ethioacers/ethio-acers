@@ -132,7 +132,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error: "Failed to generate explanation",
-        message: process.env.NODE_ENV === "development" ? message : undefined,
+        message: message || "The AI service is temporarily unavailable. Please try again later.",
       },
       { status: 500 }
     );

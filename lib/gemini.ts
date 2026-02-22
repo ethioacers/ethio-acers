@@ -1,4 +1,8 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import {
+  GoogleGenerativeAI,
+  HarmBlockThreshold,
+  HarmCategory,
+} from "@google/generative-ai";
 
 export type ExplainInput = {
   question: string;
@@ -6,6 +10,14 @@ export type ExplainInput = {
   correctAnswer: string;
   subject: string;
 };
+
+/** Relaxed safety for educational content to reduce false blocks */
+const SAFETY_SETTINGS = [
+  { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+  { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+  { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+  { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+];
 
 /**
  * Calls Gemini to explain why the correct answer is right.
@@ -18,8 +30,8 @@ export async function explainAnswer(input: ExplainInput): Promise<string> {
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  // Use Flash-Lite for better free-tier quota (15 RPM, 1000 RPD); fallback to 2.5 Flash if needed
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+  // Use gemini-1.5-flash for stability; widely available on free tier
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   const prompt = `You are a friendly tutor helping a high school student (Ethiopian curriculum, subject: ${input.subject}).
 
@@ -31,9 +43,28 @@ Correct answer: ${input.correctAnswer}
 
 Reply with only the explanation, no labels or extra text.`;
 
-  const result = await model.generateContent(prompt);
+  const result = await model.generateContent({
+    contents: [{ role: "user", parts: [{ text: prompt }] }],
+    safetySettings: SAFETY_SETTINGS,
+  });
   const response = result.response;
-  // .text() is a method; it throws if the prompt or candidate was blocked
-  const text = response.text().trim();
-  return text || "Sorry, I couldn't generate an explanation right now.";
+
+  try {
+    const text = response.text()?.trim();
+    return text || "Sorry, I couldn't generate an explanation right now.";
+  } catch {
+    // response.text() throws when blocked or empty; check candidates
+    const candidates = response.candidates;
+    if (candidates?.length) {
+      const parts = candidates[0].content?.parts;
+      if (parts?.length && "text" in parts[0]) {
+        return (parts[0].text as string).trim() || "Sorry, I couldn't generate an explanation right now.";
+      }
+    }
+    const feedback = response.promptFeedback;
+    if (feedback?.blockReason) {
+      throw new Error(`Response blocked: ${feedback.blockReason}. Try rephrasing the question.`);
+    }
+    throw new Error("The model returned no text. It may have been blocked by safety filters.");
+  }
 }
