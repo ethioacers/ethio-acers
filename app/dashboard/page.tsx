@@ -16,7 +16,7 @@ type SessionRow = {
   total: number | null;
   session_date: string;
   created_at: string;
-  subjects?: { name: string } | null;
+  subjects?: { name: string }[] | null;
 };
 
 export default function DashboardPage() {
@@ -88,7 +88,7 @@ export default function DashboardPage() {
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(5);
-      setRecentSessions((sessions as SessionRow[]) ?? []);
+      setRecentSessions((sessions as unknown as SessionRow[]) ?? []);
 
       setLoading(false);
     }
@@ -175,7 +175,7 @@ export default function DashboardPage() {
                     className="flex items-center justify-between text-sm"
                   >
                     <span>
-                      {s.subjects?.name ?? "Unknown"}
+                      {s.subjects?.[0]?.name ?? "Unknown"}
                       {s.score != null && s.total != null && (
                         <span className="text-muted-foreground ml-2">
                           {s.score}/{s.total}
