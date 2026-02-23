@@ -1,16 +1,17 @@
-"use client";
+ "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { createClient } from "@/lib/supabase";
-import { logSession } from "@/lib/streak";
-import { QuestionCard, type Question } from "@/components/QuestionCard";
-import { ScoreSummary } from "@/components/ScoreSummary";
-import { ExamScoreBreakdown } from "@/components/ExamScoreBreakdown";
-import { Button } from "@/components/ui/button";
-import { Navbar } from "@/components/Navbar";
-import { getExamQuestionCount, getExamTimeMinutes } from "@/lib/exam-config";
+ import { useEffect, useState, useCallback } from "react";
+ import { useRouter } from "next/navigation";
+ import Link from "next/link";
+ import { createClient } from "@/lib/supabase";
+ import { logSession } from "@/lib/streak";
+ import { QuestionCard, type Question } from "@/components/QuestionCard";
+ import { ScoreSummary } from "@/components/ScoreSummary";
+ import { ExamScoreBreakdown } from "@/components/ExamScoreBreakdown";
+ import { Button } from "@/components/ui/button";
+ import { Navbar } from "@/components/Navbar";
+ import { StreakPopup } from "@/components/StreakPopup";
+ import { getExamQuestionCount, getExamTimeMinutes } from "@/lib/exam-config";
 
 type SubjectRow = { id: number; name: string; grade: number };
 
@@ -38,6 +39,8 @@ export default function PracticePage() {
   const [attempts, setAttempts] = useState<{ questionId: number; correct: boolean }[]>([]);
   const [sessionLogged, setSessionLogged] = useState(false);
   const [logging, setLogging] = useState(false);
+  const [streakPopupStreak, setStreakPopupStreak] = useState<number | null>(null);
+  const [showStreakPopup, setShowStreakPopup] = useState(false);
 
   // Full Exam Mode state
   const [examAnswers, setExamAnswers] = useState<( "A" | "B" | "C" | "D" | null)[]>([]);
@@ -234,6 +237,20 @@ export default function PracticePage() {
     await logSession(userId, subjectId, score, questions.length);
     setSessionLogged(true);
     setLogging(false);
+    try {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("profiles")
+        .select("current_streak")
+        .eq("id", userId)
+        .single();
+      if (data && typeof data.current_streak === "number") {
+        setStreakPopupStreak(data.current_streak);
+        setShowStreakPopup(true);
+      }
+    } catch {
+      // Ignore streak popup errors; logging already succeeded
+    }
   }
 
   function handleBackToStart() {
@@ -477,6 +494,12 @@ export default function PracticePage() {
           )}
         </div>
       </main>
+      {showStreakPopup && streakPopupStreak !== null && (
+        <StreakPopup
+          streak={streakPopupStreak}
+          onClose={() => setShowStreakPopup(false)}
+        />
+      )}
     </>
   );
 }

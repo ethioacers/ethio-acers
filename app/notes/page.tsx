@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import { Navbar } from "@/components/Navbar";
-import { LatexRenderer } from "@/components/LatexRenderer";
+import { NotesContent } from "@/components/NotesContent";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -234,49 +234,52 @@ export default function NotesPage() {
                   {storedNotes.length} note(s) available
                 </p>
                 <ul className="space-y-1">
-                  {storedNotes.map((note) => (
-                    <li key={note.id}>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSelectedNote(selectedNote?.id === note.id ? null : note)
-                        }
-                        className={`w-full rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-muted ${
-                          selectedNote?.id === note.id ? "bg-muted" : ""
-                        }`}
-                      >
-                        {note.topic}
-                        {note.is_ai_generated && (
-                          <span className="ml-2 text-xs text-muted-foreground">
-                            (AI Generated)
-                          </span>
-                        )}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-                {selectedNote && (
-                  <div className="mt-4 rounded-md border border-muted bg-muted/30 p-4">
-                    <div className="mb-2 flex items-center justify-between">
-                      <span className="text-xs font-medium text-muted-foreground">
-                        {selectedNote.is_ai_generated ? "AI Generated" : "Saved"}
-                      </span>
-                      {selectedNote.file_url && (
-                        <a
-                          href={selectedNote.file_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-gold hover:underline"
+                  {storedNotes.map((note) => {
+                    const isSelected = selectedNote?.id === note.id;
+                    return (
+                      <li key={note.id} className="space-y-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSelectedNote(isSelected ? null : note)
+                          }
+                          className={`w-full rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-muted ${
+                            isSelected ? "bg-muted" : ""
+                          }`}
                         >
-                          Download PDF
-                        </a>
-                      )}
-                    </div>
-                    <div className="whitespace-pre-wrap text-sm">
-                      <LatexRenderer text={selectedNote.content || "No content."} />
-                    </div>
-                  </div>
-                )}
+                          {note.topic}
+                          {note.is_ai_generated && (
+                            <span className="ml-2 text-xs text-muted-foreground">
+                              (AI Generated)
+                            </span>
+                          )}
+                        </button>
+                        {isSelected && (
+                          <div className="rounded-md border border-muted bg-muted/30 p-4">
+                            <div className="mb-2 flex items-center justify-between">
+                              <span className="text-xs font-medium text-muted-foreground">
+                                {note.is_ai_generated ? "AI Generated" : "Saved"}
+                              </span>
+                              {note.file_url && (
+                                <a
+                                  href={note.file_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sm text-gold hover:underline"
+                                >
+                                  Download PDF
+                                </a>
+                              )}
+                            </div>
+                            <div className="text-sm">
+                              <NotesContent content={note.content || "No content."} />
+                            </div>
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
             )}
 
@@ -355,8 +358,8 @@ export default function NotesPage() {
                   <p className="mb-2 text-xs font-medium text-muted-foreground">
                     {aiResult.isFromDb ? "Saved" : "AI Generated"}
                   </p>
-                  <div className="whitespace-pre-wrap text-sm">
-                    <LatexRenderer text={aiResult.content} />
+                  <div className="text-sm">
+                    <NotesContent content={aiResult.content} />
                   </div>
                 </div>
               )}

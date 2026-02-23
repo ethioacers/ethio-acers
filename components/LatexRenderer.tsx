@@ -6,7 +6,7 @@ import { useMemo } from "react";
 
 type Props = { text: string };
 
-/** Matches $$...$$, \(...\), \[...\], or $...$ — check $$ before $ */
+/** Matches $$...$$, \(...\), \[...\], [math]...[/math], or $...$ — check longer patterns first */
 function parseLatex(text: string): { type: "text" | "latex"; value: string; displayMode?: boolean }[] {
   if (!text || typeof text !== "string") return [{ type: "text", value: "" }];
   const result: { type: "text" | "latex"; value: string; displayMode?: boolean }[] = [];
@@ -17,6 +17,13 @@ function parseLatex(text: string): { type: "text" | "latex"; value: string; disp
     if (dd) {
       result.push({ type: "latex", value: dd[1].trim(), displayMode: true });
       remaining = remaining.slice(dd[0].length);
+      continue;
+    }
+
+    const mathTag = remaining.match(/^\[math\]([\s\S]*?)\[\/math\]/i);
+    if (mathTag) {
+      result.push({ type: "latex", value: mathTag[1].trim(), displayMode: false });
+      remaining = remaining.slice(mathTag[0].length);
       continue;
     }
 
@@ -41,16 +48,39 @@ function parseLatex(text: string): { type: "text" | "latex"; value: string; disp
       continue;
     }
 
-    const nextDelim = remaining.search(/\$\$|\\\(|\\\[|\$/);
+    const nextDelim = remaining.search(/\$\$|\[math\]|\\\(|\\\[|\$/i);
     if (nextDelim === -1) {
-      result.push({ type: "text", value: remaining });
+      // No delimiter found - try to find and render LaTeX "islands" (e.g. \frac{3}{2}, \leq in plain text)
+      result.push(...splitLatexIslands(remaining));
       break;
     }
-    result.push({ type: "text", value: remaining.slice(0, nextDelim) });
+    const before = remaining.slice(0, nextDelim);
+    if (before.length > 0) {
+      result.push(...splitLatexIslands(before));
+    }
     remaining = remaining.slice(nextDelim);
   }
 
   return result.length ? result : [{ type: "text", value: text }];
+}
+
+/** Finds LaTeX commands like \frac{3}{2}, \leq, \infty in plain text and splits into text/latex parts */
+function splitLatexIslands(text: string): { type: "text" | "latex"; value: string; displayMode?: boolean }[] {
+  const parts: { type: "text" | "latex"; value: string; displayMode?: boolean }[] = [];
+  const re = /\\(frac\{[^{}]+\}\{[^{}]+\}|sqrt\{[^{}]+\}|[a-zA-Z]+(?:\([^)]*\))?)/g;
+  let lastEnd = 0;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > lastEnd) {
+      parts.push({ type: "text", value: text.slice(lastEnd, m.index) });
+    }
+    parts.push({ type: "latex", value: m[0], displayMode: false });
+    lastEnd = m.index + m[0].length;
+  }
+  if (lastEnd < text.length) {
+    parts.push({ type: "text", value: text.slice(lastEnd) });
+  }
+  return parts.length ? parts : [{ type: "text", value: text }];
 }
 
 /**
@@ -67,10 +97,13 @@ export function LatexRenderer({ text }: Props) {
           return <span key={i}>{part.value}</span>;
         }
         try {
-          const html = katex.renderToString(part.value, {
-            throwOnError: false,
-            displayMode: part.displayMode ?? false,
-          });
+          const html = katex.renderToString(
+            part.value.replace(/\\\\/g, "\\"),
+            {
+              throwOnError: false,
+              displayMode: part.displayMode ?? false,
+            }
+          );
           return <span key={i} dangerouslySetInnerHTML={{ __html: html }} />;
         } catch {
           return <span key={i}>{part.value}</span>;

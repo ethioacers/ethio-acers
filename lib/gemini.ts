@@ -19,6 +19,60 @@ const SAFETY_SETTINGS = [
   { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
 ];
 
+// Prefer latest stable 2.5 Flash models; fall back to Lite
+const GEMINI_PRIMARY_MODEL = "gemini-2.5-flash";
+const GEMINI_FALLBACK_MODEL = "gemini-2.5-flash-lite";
+
+function isModelNotFoundError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return (
+    msg.includes("[404") ||
+    msg.includes("404") ||
+    msg.includes("is not found") ||
+    msg.includes("not supported for generateContent")
+  );
+}
+
+async function generateTextWithFallback(genAI: GoogleGenerativeAI, prompt: string): Promise<string> {
+  async function run(modelName: string): Promise<string> {
+    // Let the SDK choose the appropriate API version for this model
+    const model = genAI.getGenerativeModel({ model: modelName });
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      safetySettings: SAFETY_SETTINGS,
+    });
+    const response = result.response;
+
+    try {
+      const text = response.text()?.trim();
+      return text || "";
+    } catch {
+      const candidates = response.candidates;
+      if (candidates?.length) {
+        const parts = candidates[0].content?.parts;
+        if (parts?.length && "text" in parts[0]) {
+          return ((parts[0].text as string) ?? "").trim();
+        }
+      }
+      const feedback = response.promptFeedback;
+      if (feedback?.blockReason) {
+        throw new Error(`Response blocked: ${feedback.blockReason}. Try rephrasing the question.`);
+      }
+      return "";
+    }
+  }
+
+  try {
+    const primary = await run(GEMINI_PRIMARY_MODEL);
+    if (primary) return primary;
+  } catch (err) {
+    if (!isModelNotFoundError(err)) throw err;
+  }
+
+  const fallback = await run(GEMINI_FALLBACK_MODEL);
+  return fallback;
+}
+
 /**
  * Calls Gemini to explain why the correct answer is right.
  * Used only server-side (API route); GEMINI_API_KEY must not be exposed to the client.
@@ -30,11 +84,6 @@ export async function explainAnswer(input: ExplainInput): Promise<string> {
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  // Use Gemini 1.5 Flash on stable v1 API
-  const model = genAI.getGenerativeModel(
-    { model: "gemini-1.5-flash-latest" },
-    { apiVersion: "v1" }
-  );
 
   const prompt = `You are a friendly tutor helping a high school student (Ethiopian curriculum, subject: ${input.subject}).
 
@@ -46,30 +95,8 @@ Correct answer: ${input.correctAnswer}
 
 Reply with only the explanation, no labels or extra text.`;
 
-  const result = await model.generateContent({
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-    safetySettings: SAFETY_SETTINGS,
-  });
-  const response = result.response;
-
-  try {
-    const text = response.text()?.trim();
-    return text || "Sorry, I couldn't generate an explanation right now.";
-  } catch {
-    // response.text() throws when blocked or empty; check candidates
-    const candidates = response.candidates;
-    if (candidates?.length) {
-      const parts = candidates[0].content?.parts;
-      if (parts?.length && "text" in parts[0]) {
-        return (parts[0].text as string).trim() || "Sorry, I couldn't generate an explanation right now.";
-      }
-    }
-    const feedback = response.promptFeedback;
-    if (feedback?.blockReason) {
-      throw new Error(`Response blocked: ${feedback.blockReason}. Try rephrasing the question.`);
-    }
-    throw new Error("The model returned no text. It may have been blocked by safety filters.");
-  }
+  const text = await generateTextWithFallback(genAI, prompt);
+  return text || "Sorry, I couldn't generate an explanation right now.";
 }
 
 export type StudyNotesInput = {
@@ -89,31 +116,11 @@ export async function generateStudyNotes(input: StudyNotesInput): Promise<string
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel(
-    { model: "gemini-1.5-flash-latest" },
-    { apiVersion: "v1" }
-  );
 
   const prompt = `Write concise study notes for Ethiopian Grade ${input.grade} ${input.subject} students on the topic: ${input.topic}.
-Cover key concepts, definitions, and examples. Keep it under 500 words. Use simple language.`;
+Cover key concepts, definitions, and examples. Keep it under 500 words. Use simple language.
+Format the output in Markdown: use ## for section headings, - for bullet points, **bold** for key terms, and line breaks between paragraphs.`;
 
-  const result = await model.generateContent({
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-    safetySettings: SAFETY_SETTINGS,
-  });
-  const response = result.response;
-
-  try {
-    const text = response.text()?.trim();
-    return text || "Sorry, I couldn't generate notes right now.";
-  } catch {
-    const candidates = response.candidates;
-    if (candidates?.length) {
-      const parts = candidates[0].content?.parts;
-      if (parts?.length && "text" in parts[0]) {
-        return (parts[0].text as string).trim() || "Sorry, I couldn't generate notes right now.";
-      }
-    }
-    throw new Error("The model returned no text. It may have been blocked by safety filters.");
-  }
+  const text = await generateTextWithFallback(genAI, prompt);
+  return text || "Sorry, I couldn't generate notes right now.";
 }
