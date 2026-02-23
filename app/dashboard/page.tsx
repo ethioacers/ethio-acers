@@ -208,6 +208,14 @@ export default function DashboardPage() {
               size="lg"
               className="w-full sm:w-auto"
             >
+              <Link href="/notes">Notes</Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="w-full sm:w-auto"
+            >
               <Link href="/profile">View Profile</Link>
             </Button>
           </div>

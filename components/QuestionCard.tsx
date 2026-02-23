@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { LatexRenderer } from "@/components/LatexRenderer";
 
 export type Question = {
   id: number;
@@ -64,7 +65,9 @@ export function QuestionCard({
       <p className="text-sm text-muted-foreground">
         Question {questionNumber} of {total}
       </p>
-      <p className="text-base sm:text-lg font-medium">{question.question_text}</p>
+      <p className="text-base sm:text-lg font-medium">
+        <LatexRenderer text={question.question_text} />
+      </p>
       <div className="space-y-2">
         {options.map(({ key, text }) => {
           const chosen = selectedAnswer === key;
@@ -86,7 +89,7 @@ export function QuestionCard({
               onClick={() => onSelect(key)}
               className={`w-full rounded-md px-4 py-3 min-h-[44px] text-left text-sm sm:text-base transition-colors ${style}`}
             >
-              <span className="font-medium">{key}.</span> {text}
+              <span className="font-medium">{key}.</span> <LatexRenderer text={text ?? ""} />
             </button>
           );
         })}
@@ -102,7 +105,7 @@ export function QuestionCard({
           </p>
           {question.explanation && (
             <p className="text-sm text-muted-foreground">
-              {question.explanation}
+              <LatexRenderer text={question.explanation} />
             </p>
           )}
           {!isCorrect && subject && (
@@ -157,7 +160,9 @@ export function QuestionCard({
               {aiExplanation && (
                 <div className="rounded-md border border-primary/20 bg-primary/5 p-3">
                   <p className="text-xs font-medium text-muted-foreground mb-1">AI tutor</p>
-                  <p className="text-sm">{aiExplanation}</p>
+                  <p className="text-sm">
+                    <LatexRenderer text={aiExplanation} />
+                  </p>
                 </div>
               )}
               {aiError && (

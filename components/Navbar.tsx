@@ -38,6 +38,12 @@ export function Navbar() {
             Practice
           </Link>
           <Link
+            href="/notes"
+            className="text-muted-foreground hover:text-gold transition-colors"
+          >
+            Notes
+          </Link>
+          <Link
             href="/profile"
             className="text-muted-foreground hover:text-gold transition-colors"
           >

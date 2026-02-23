@@ -97,7 +97,9 @@ export default function PracticePage() {
       setSelectedYear(null);
       return;
     }
-    const resolvedId = subjects.find((s) => s.name === subjectName && s.grade === grade)?.id;
+    const resolvedId = subjects.find(
+      (s) => s.name.trim().toLowerCase() === subjectName.trim().toLowerCase() && Number(s.grade) === Number(grade)
+    )?.id;
     if (!resolvedId) {
       setAvailableYears([]);
       return;
@@ -124,7 +126,9 @@ export default function PracticePage() {
 
   async function loadQuestions() {
     if (!subjectName || grade === "") return;
-    const resolvedId = subjects.find((s) => s.name === subjectName && s.grade === grade)?.id;
+    const resolvedId = subjects.find(
+      (s) => s.name.trim().toLowerCase() === subjectName.trim().toLowerCase() && Number(s.grade) === Number(grade)
+    )?.id;
     if (!resolvedId) return;
     setSubjectId(resolvedId);
     setLoadingQuestions(true);
