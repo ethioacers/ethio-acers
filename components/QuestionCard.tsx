@@ -16,6 +16,7 @@ export type Question = {
   correct_answer: "A" | "B" | "C" | "D";
   explanation: string | null;
   year: number | null;
+  chapter?: string | null;
 };
 
 type Props = {

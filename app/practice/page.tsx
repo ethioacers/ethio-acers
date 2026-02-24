@@ -28,6 +28,8 @@ export default function PracticePage() {
   const [subjectId, setSubjectId] = useState<number | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [availableYears, setAvailableYears] = useState<number[]>([]);
+  const [selectedChapter, setSelectedChapter] = useState<string | null>(null);
+  const [availableChapters, setAvailableChapters] = useState<string[]>([]);
   const [mode, setMode] = useState<Mode>("practice");
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,6 +100,8 @@ export default function PracticePage() {
     if (!subjectName || grade === "") {
       setAvailableYears([]);
       setSelectedYear(null);
+      setAvailableChapters([]);
+      setSelectedChapter(null);
       return;
     }
     const resolvedId = subjects.find(
@@ -105,6 +109,7 @@ export default function PracticePage() {
     )?.id;
     if (!resolvedId) {
       setAvailableYears([]);
+      setAvailableChapters([]);
       return;
     }
     let cancelled = false;
@@ -121,7 +126,21 @@ export default function PracticePage() {
       setAvailableYears(years);
       setSelectedYear(null);
     }
+    async function fetchChapters() {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("questions")
+        .select("chapter")
+        .eq("subject_id", resolvedId)
+        .eq("grade", grade)
+        .not("chapter", "is", null);
+      if (cancelled) return;
+      const chaps = [...new Set((data ?? []).map((r) => (r.chapter as string).trim()).filter(Boolean))].sort();
+      setAvailableChapters(chaps);
+      setSelectedChapter(null);
+    }
     fetchYears();
+    fetchChapters();
     return () => {
       cancelled = true;
     };
@@ -145,6 +164,9 @@ export default function PracticePage() {
       .eq("grade", grade);
     if (selectedYear != null) {
       query = query.eq("year", selectedYear);
+    }
+    if (selectedChapter != null && selectedChapter !== "") {
+      query = query.eq("chapter", selectedChapter);
     }
     const { data } = await query.limit(limit);
     const shuffled = (data ?? []).sort(() => Math.random() - 0.5);
@@ -411,6 +433,24 @@ export default function PracticePage() {
                 </div>
               )}
 
+              {subjectName && grade !== "" && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Chapter</label>
+                  <select
+                    className="select-theme h-11 w-full rounded-lg border-2 border-border bg-muted/80 pl-3 pr-10 py-2 text-sm text-foreground transition-colors hover:border-primary/50 hover:bg-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 sm:max-w-[12rem]"
+                    value={selectedChapter ?? ""}
+                    onChange={(e) => setSelectedChapter(e.target.value === "" ? null : e.target.value)}
+                  >
+                    <option value="">All Chapters</option>
+                    {availableChapters.map((ch) => (
+                      <option key={ch} value={ch}>
+                        {ch}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <Button onClick={loadQuestions} disabled={!canStart} className="w-full sm:w-auto">
                 {startLabel}
               </Button>
@@ -444,6 +484,9 @@ export default function PracticePage() {
                     Question {currentIndex + 1} / {questions.length}
                     {selectedYear != null && (
                       <span className="ml-2 text-muted-foreground">· {selectedYear}</span>
+                    )}
+                    {selectedChapter != null && selectedChapter !== "" && (
+                      <span className="ml-2 text-muted-foreground">· {selectedChapter}</span>
                     )}
                   </div>
                   <div className="h-2 flex-1 rounded-full bg-muted sm:mx-4">

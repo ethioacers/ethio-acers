@@ -46,8 +46,16 @@ create table if not exists questions (
   option_d text,
   correct_answer text check (correct_answer in ('A','B','C','D')),
   explanation text,
-  year int
+  year int,
+  chapter text
 );
+
+-- If chapter was added later, ensure it exists:
+alter table questions add column if not exists chapter text;
+
+-- Example insert format for questions with chapter:
+-- insert into questions (subject_id, grade, question_text, option_a, option_b, option_c, option_d, correct_answer, explanation, year, chapter)
+-- values (1, 12, 'Question text...', 'A', 'B', 'C', 'D', 'A', 'Explanation...', 2024, 'Chapter 1');
 
 -- Sessions
 create table if not exists sessions (
