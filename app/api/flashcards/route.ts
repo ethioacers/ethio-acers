@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { generateStudyNotes } from "@/lib/ai";
+import { generateJsonCompletion } from "@/lib/ai";
 
 export const runtime = "nodejs";
 
@@ -114,12 +114,7 @@ export async function POST(request: Request) {
 
     let jsonText: string;
     try {
-      // Reuse generateStudyNotes infrastructure as a generic text generator
-      jsonText = await generateStudyNotes({
-        subject,
-        grade: Number(grade),
-        topic: prompt,
-      });
+      jsonText = await generateJsonCompletion(prompt);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error("flashcards Groq generate error:", message, err);
@@ -132,9 +127,17 @@ export async function POST(request: Request) {
       );
     }
 
+    function extractJsonArray(text: string): string {
+      const start = text.indexOf("[");
+      const end = text.lastIndexOf("]");
+      if (start === -1 || end === -1 || end <= start) return text;
+      return text.slice(start, end + 1);
+    }
+
     let parsed: FlashcardPair[];
     try {
-      parsed = JSON.parse(jsonText) as FlashcardPair[];
+      const cleaned = extractJsonArray(jsonText);
+      parsed = JSON.parse(cleaned) as FlashcardPair[];
       if (!Array.isArray(parsed)) {
         throw new Error("Response is not an array");
       }

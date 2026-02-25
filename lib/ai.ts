@@ -63,3 +63,15 @@ Format the output in Markdown: use ## for section headings, - for bullet points,
   return text || "Sorry, I couldn't generate notes right now.";
 }
 
+export async function generateJsonCompletion(prompt: string): Promise<string> {
+  const groq = createGroqClient();
+  const response = await groq.chat.completions.create({
+    model: "llama-3.1-8b-instant",
+    messages: [{ role: "user", content: prompt }],
+    max_tokens: 1000,
+  });
+  const content = response.choices?.[0]?.message?.content ?? "";
+  return typeof content === "string" ? content.trim() : "";
+}
+
+

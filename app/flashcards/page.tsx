@@ -48,6 +48,9 @@ export default function FlashcardsPage() {
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [loadingCards, setLoadingCards] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [dragX, setDragX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -268,6 +271,31 @@ export default function FlashcardsPage() {
     resetSession(shuffled);
   }
 
+  const handleKnow = () => handleMark("known");
+  const handleReview = () => handleMark("review");
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    setStartX(e.clientX);
+    setIsDragging(true);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    setDragX(e.clientX - startX);
+    e.preventDefault();
+  };
+
+  const handlePointerUp = () => {
+    if (dragX > 80) {
+      handleKnow();
+    } else if (dragX < -80) {
+      handleReview();
+    }
+    setDragX(0);
+    setIsDragging(false);
+  };
+
   if (loading) {
     return (
       <>
@@ -424,28 +452,74 @@ export default function FlashcardsPage() {
                 <p className="text-sm text-destructive">{sessionError}</p>
               )}
 
-              <div className="relative mt-4 flex w-full flex-1 items-center justify-center">
+              <div className="mt-4 flex w-full flex-1 items-center justify-center">
                 <div
-                  className={`relative h-64 w-full max-w-sm cursor-pointer rounded-xl border border-yellow-500/60 bg-card/90 shadow-xl shadow-yellow-500/20 transition-transform duration-500 [transform-style:preserve-3d] ${
-                    showBack ? "rotate-y-180" : ""
-                  }`}
                   onClick={() => setShowBack((v) => !v)}
+                  onPointerDown={handlePointerDown}
+                  onPointerMove={handlePointerMove}
+                  onPointerUp={handlePointerUp}
+                  style={{
+                    perspective: "1000px",
+                    transform: `translateX(${dragX}px) rotate(${dragX * 0.05}deg)`,
+                    transition: isDragging ? "none" : "transform 0.3s",
+                    boxShadow:
+                      dragX > 40
+                        ? "0 0 20px rgba(0,200,0,0.5)"
+                        : dragX < -40
+                        ? "0 0 20px rgba(200,0,0,0.5)"
+                        : "none",
+                  }}
+                  className="h-64 w-full max-w-sm cursor-pointer"
                 >
-                  <div className="absolute inset-0 flex flex-col justify-center px-6 [backface-visibility:hidden]">
-                    <p className="mb-2 text-xs font-medium text-muted-foreground">
-                      Front
-                    </p>
-                    <div className="text-sm sm:text-base font-medium">
-                      <LatexRenderer text={cards[currentIndex].front} />
+                  <div
+                    style={{
+                      transition: "transform 0.6s",
+                      transformStyle: "preserve-3d",
+                      transform: showBack ? "rotateY(180deg)" : "rotateY(0deg)",
+                      position: "relative",
+                      width: "100%",
+                      height: "100%",
+                    }}
+                  >
+                    <div
+                      style={{
+                        backfaceVisibility: "hidden",
+                        WebkitBackfaceVisibility: "hidden",
+                      }}
+                      className="absolute inset-0 flex flex-col justify-center rounded-xl border border-yellow-500/60 bg-card/90 px-6 shadow-xl shadow-yellow-500/20"
+                    >
+                      <p className="mb-2 text-xs font-medium text-muted-foreground">
+                        Front
+                      </p>
+                      <div className="text-sm sm:text-base font-medium">
+                        <LatexRenderer text={cards[currentIndex].front} />
+                      </div>
                     </div>
-                  </div>
-                  <div className="absolute inset-0 flex flex-col justify-center px-6 [backface-visibility:hidden] rotate-y-180">
-                    <p className="mb-2 text-xs font-medium text-muted-foreground">
-                      Back
-                    </p>
-                    <div className="text-sm sm:text-base">
-                      <LatexRenderer text={cards[currentIndex].back} />
+                    <div
+                      style={{
+                        backfaceVisibility: "hidden",
+                        WebkitBackfaceVisibility: "hidden",
+                        transform: "rotateY(180deg)",
+                      }}
+                      className="absolute inset-0 flex flex-col justify-center rounded-xl border border-yellow-500/60 bg-card/90 px-6 shadow-xl shadow-yellow-500/20"
+                    >
+                      <p className="mb-2 text-xs font-medium text-muted-foreground">
+                        Back
+                      </p>
+                      <div className="text-sm sm:text-base">
+                        <LatexRenderer text={cards[currentIndex].back} />
+                      </div>
                     </div>
+                    {dragX > 40 && (
+                      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                        <span className="text-6xl text-emerald-500">✅</span>
+                      </div>
+                    )}
+                    {dragX < -40 && (
+                      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                        <span className="text-6xl text-red-500">❌</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
