@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { generateStudyNotes } from "@/lib/gemini";
+import { generateStudyNotes } from "@/lib/ai";
 
 export const runtime = "nodejs";
 

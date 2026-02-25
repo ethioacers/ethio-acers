@@ -61,6 +61,12 @@ export function Navbar() {
             Notes
           </Link>
           <Link
+            href="/flashcards"
+            className="text-muted-foreground hover:text-gold transition-colors"
+          >
+            Flashcards
+          </Link>
+          <Link
             href="/profile"
             className="text-muted-foreground hover:text-gold transition-colors"
           >

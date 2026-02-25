@@ -2,16 +2,16 @@ import { NextResponse } from "next/server";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { explainAnswer } from "@/lib/gemini";
+import { explainAnswer } from "@/lib/ai";
 
 const DAILY_AI_LIMIT = 5;
 
 // Use Node.js runtime so process.env (including .env.local) is available
 export const runtime = "nodejs";
 
-/** Fallback: read GEMINI_API_KEY from .env.local if Next didn't inject it */
-function getGeminiApiKey(): string {
-  let key = (process.env.GEMINI_API_KEY ?? "").trim();
+/** Fallback: read GROQ_API_KEY from .env.local if Next didn't inject it */
+function getGroqApiKey(): string {
+  let key = (process.env.GROQ_API_KEY ?? "").trim();
   if (key) return key;
   // Find project root (directory that contains package.json)
   let dir = process.cwd();
@@ -21,7 +21,7 @@ function getGeminiApiKey(): string {
       if (existsSync(envPath)) {
         const content = readFileSync(envPath, "utf8");
         for (const line of content.split(/\r?\n/)) {
-          const m = line.match(/^\s*GEMINI_API_KEY\s*=\s*(.+)/);
+          const m = line.match(/^\s*GROQ_API_KEY\s*=\s*(.+)/);
           if (m) {
             key = m[1].trim().replace(/^["']|["']$/g, "");
             if (key) return key;
@@ -97,19 +97,19 @@ export async function POST(request: Request) {
       );
     }
 
-    let apiKey = getGeminiApiKey();
+    let apiKey = getGroqApiKey();
     if (!apiKey) {
-      console.error("GEMINI_API_KEY is not set.");
+      console.error("GROQ_API_KEY is not set.");
       return NextResponse.json(
         {
           error: "AI is not configured.",
           message:
-            "Set GEMINI_API_KEY in .env.local (same folder as package.json), then restart the dev server.",
+            "Set GROQ_API_KEY in .env.local (same folder as package.json), then restart the dev server.",
         },
         { status: 500 }
       );
     }
-    process.env.GEMINI_API_KEY = apiKey;
+    process.env.GROQ_API_KEY = apiKey;
 
     let explanation: string;
     try {
