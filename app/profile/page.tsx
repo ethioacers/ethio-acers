@@ -24,6 +24,8 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [createdAt, setCreatedAt] = useState("");
@@ -35,43 +37,61 @@ export default function ProfilePage() {
 
   useEffect(() => {
     async function load() {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        router.replace("/login");
-        return;
-      }
-      setUserId(user.id);
-      setEmail(user.email ?? "");
-      setCreatedAt(user.created_at ?? "");
+      setLoadError(null);
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+          error: userErr,
+        } = await supabase.auth.getUser();
+        if (userErr) {
+          setLoadError(userErr.message);
+          return;
+        }
+        if (!user) {
+          router.replace("/login");
+          return;
+        }
+        setUserId(user.id);
+        setEmail(user.email ?? "");
+        setCreatedAt(user.created_at ?? "");
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-      if (profile) {
-        const p = profile as ProfileRow;
-        setFullName(p.full_name ?? "");
-        setSchoolName(p.school_name ?? "");
-        setGrade(p.grade != null ? p.grade : "");
-        setCreatedAt((s) => s || p.created_at);
-      }
+        const { data: profile, error: profileErr } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+        if (profileErr) {
+          setLoadError(profileErr.message);
+        }
+        if (profile) {
+          const p = profile as ProfileRow;
+          setFullName(p.full_name ?? "");
+          setSchoolName(p.school_name ?? "");
+          setGrade(p.grade != null ? p.grade : "");
+          setCreatedAt((s) => s || p.created_at);
+        }
 
-      const { count: total } = await supabase
-        .from("attempts")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id);
-      const { count: correct } = await supabase
-        .from("attempts")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .eq("is_correct", true);
-      setTotalAttempts(total ?? 0);
-      setCorrectAttempts(correct ?? 0);
-      setLoading(false);
+        const { count: total, error: totalErr } = await supabase
+          .from("attempts")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user.id);
+        const { count: correct, error: correctErr } = await supabase
+          .from("attempts")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .eq("is_correct", true);
+        if (totalErr || correctErr) {
+          setLoadError((totalErr ?? correctErr)?.message ?? "Failed to load stats.");
+        }
+        setTotalAttempts(total ?? 0);
+        setCorrectAttempts(correct ?? 0);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setLoadError(msg || "Failed to load profile.");
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, [router]);
@@ -81,17 +101,28 @@ export default function ProfilePage() {
     if (!userId) return;
     setSaving(true);
     setSuccess(false);
-    const supabase = createClient();
-    await supabase
-      .from("profiles")
-      .update({
-        full_name: fullName || null,
-        school_name: schoolName || null,
-        grade: grade !== "" ? grade : null,
-      })
-      .eq("id", userId);
-    setSaving(false);
-    setSuccess(true);
+    setSaveError(null);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          full_name: fullName || null,
+          school_name: schoolName || null,
+          grade: grade !== "" ? grade : null,
+        })
+        .eq("id", userId);
+      if (error) {
+        setSaveError(error.message);
+        return;
+      }
+      setSuccess(true);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setSaveError(msg || "Failed to save profile.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleChangePassword() {
@@ -136,6 +167,12 @@ export default function ProfilePage() {
               ← Dashboard
             </Link>
           </div>
+
+          {loadError && (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+              {loadError}
+            </div>
+          )}
 
           <form onSubmit={handleSave} className="space-y-6 rounded-lg border bg-card p-6 shadow-sm">
             <div className="space-y-2">
@@ -210,6 +247,9 @@ export default function ProfilePage() {
             </div>
             {success && (
               <p className="text-sm text-green-600">Profile saved successfully.</p>
+            )}
+            {saveError && (
+              <p className="text-sm text-destructive">{saveError}</p>
             )}
             <Button type="submit" disabled={saving} className="w-full sm:w-auto">
               {saving ? "Saving…" : "Save"}

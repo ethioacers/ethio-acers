@@ -27,12 +27,15 @@ export default function NotesPage() {
   const router = useRouter();
   const [subjects, setSubjects] = useState<SubjectRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initError, setInitError] = useState<string | null>(null);
 
   // Stored Notes state
   const [storedSubject, setStoredSubject] = useState("");
   const [storedGrade, setStoredGrade] = useState<number | "">("");
   const [storedNotes, setStoredNotes] = useState<NoteRow[]>([]);
   const [selectedNote, setSelectedNote] = useState<NoteRow | null>(null);
+  const [storedLoading, setStoredLoading] = useState(false);
+  const [storedError, setStoredError] = useState<string | null>(null);
 
   // AI Notes state
   const [aiSubject, setAiSubject] = useState("");
@@ -47,17 +50,32 @@ export default function NotesPage() {
 
   useEffect(() => {
     async function init() {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        router.replace("/login");
-        return;
+      setInitError(null);
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
+        if (error) {
+          setInitError(error.message);
+          return;
+        }
+        if (!user) {
+          router.replace("/login");
+          return;
+        }
+        const { data, error: subjErr } = await supabase.from("subjects").select("id, name, grade");
+        if (subjErr) {
+          setInitError(subjErr.message);
+        }
+        setSubjects((data as SubjectRow[]) ?? []);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setInitError(msg || "Failed to load notes page.");
+      } finally {
+        setLoading(false);
       }
-      const { data } = await supabase.from("subjects").select("id, name, grade");
-      setSubjects((data as SubjectRow[]) ?? []);
-      setLoading(false);
     }
     init();
   }, [router]);
@@ -66,6 +84,7 @@ export default function NotesPage() {
     if (!storedSubject || storedGrade === "") {
       setStoredNotes([]);
       setSelectedNote(null);
+      setStoredError(null);
       return;
     }
     const subjectId = subjects.find(
@@ -73,18 +92,36 @@ export default function NotesPage() {
     )?.id;
     if (!subjectId) {
       setStoredNotes([]);
+      setStoredError("Subject not found for this grade.");
       return;
     }
     async function fetchNotes() {
-      const supabase = createClient();
-      const { data } = await supabase
-        .from("notes")
-        .select("id, subject_id, grade, topic, content, file_url, is_ai_generated")
-        .eq("subject_id", subjectId)
-        .eq("grade", storedGrade)
-        .order("created_at", { ascending: false });
-      setStoredNotes((data as NoteRow[]) ?? []);
-      setSelectedNote(null);
+      setStoredLoading(true);
+      setStoredError(null);
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from("notes")
+          .select("id, subject_id, grade, topic, content, file_url, is_ai_generated")
+          .eq("subject_id", subjectId)
+          .eq("grade", storedGrade)
+          .order("created_at", { ascending: false });
+        if (error) {
+          setStoredError(error.message);
+          setStoredNotes([]);
+          setSelectedNote(null);
+          return;
+        }
+        setStoredNotes((data as NoteRow[]) ?? []);
+        setSelectedNote(null);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setStoredError(msg || "Failed to load notes.");
+        setStoredNotes([]);
+        setSelectedNote(null);
+      } finally {
+        setStoredLoading(false);
+      }
     }
     fetchNotes();
   }, [storedSubject, storedGrade, subjects]);
@@ -111,18 +148,25 @@ export default function NotesPage() {
     const supabase = createClient();
 
     // Check if note already exists
-    const { data: existing } = await supabase
-      .from("notes")
-      .select("id, content")
-      .eq("subject_id", subjectId)
-      .eq("grade", aiGrade)
-      .eq("topic", topicTrimmed)
-      .maybeSingle();
+    try {
+      const { data: existing, error: existingErr } = await supabase
+        .from("notes")
+        .select("id, content")
+        .eq("subject_id", subjectId)
+        .eq("grade", aiGrade)
+        .eq("topic", topicTrimmed)
+        .maybeSingle();
 
-    if (existing?.content) {
-      setAiResult({ content: existing.content as string, isFromDb: true });
-      setAiLoading(false);
-      return;
+      if (existingErr) {
+        setAiError(existingErr.message);
+      }
+      if (existing?.content) {
+        setAiResult({ content: existing.content as string, isFromDb: true });
+        setAiLoading(false);
+        return;
+      }
+    } catch {
+      setAiError("Failed to check saved notes.");
     }
 
     try {
@@ -145,13 +189,21 @@ export default function NotesPage() {
       setAiResult({ content: data.content, isFromDb: false });
       // Refresh stored notes list if same subject/grade
       if (storedSubject === aiSubject && storedGrade === aiGrade) {
-        const { data: refreshed } = await supabase
-          .from("notes")
-          .select("id, subject_id, grade, topic, content, file_url, is_ai_generated")
-          .eq("subject_id", subjectId)
-          .eq("grade", aiGrade)
-          .order("created_at", { ascending: false });
-        setStoredNotes((refreshed as NoteRow[]) ?? []);
+        try {
+          const { data: refreshed, error: refreshErr } = await supabase
+            .from("notes")
+            .select("id, subject_id, grade, topic, content, file_url, is_ai_generated")
+            .eq("subject_id", subjectId)
+            .eq("grade", aiGrade)
+            .order("created_at", { ascending: false });
+          if (refreshErr) {
+            setStoredError(refreshErr.message);
+          } else {
+            setStoredNotes((refreshed as NoteRow[]) ?? []);
+          }
+        } catch {
+          setStoredError("Failed to refresh notes list.");
+        }
       }
     } catch {
       setAiError("Could not connect to the server.");
@@ -178,6 +230,11 @@ export default function NotesPage() {
       <Navbar />
       <main className="min-h-screen p-4 sm:p-6">
         <div className="mx-auto max-w-2xl space-y-8">
+          {initError && (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+              {initError}
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">Notes</h1>
             <Link
@@ -227,6 +284,13 @@ export default function NotesPage() {
                 </select>
               </div>
             </div>
+
+            {storedLoading && (
+              <p className="text-sm text-muted-foreground">Loading notes…</p>
+            )}
+            {storedError && (
+              <p className="text-sm text-destructive">{storedError}</p>
+            )}
 
             {storedNotes.length > 0 && (
               <div className="space-y-2">

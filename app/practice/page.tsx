@@ -33,7 +33,14 @@ export default function PracticePage() {
   const [mode, setMode] = useState<Mode>("practice");
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initError, setInitError] = useState<string | null>(null);
+  const [filtersError, setFiltersError] = useState<string | null>(null);
+  const [yearsLoading, setYearsLoading] = useState(false);
+  const [chaptersLoading, setChaptersLoading] = useState(false);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
+  const [questionsError, setQuestionsError] = useState<string | null>(null);
+  const [emptyQuestionsMessage, setEmptyQuestionsMessage] = useState<string | null>(null);
+  const [nonBlockingError, setNonBlockingError] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<"A" | "B" | "C" | "D" | null>(null);
   const [showResult, setShowResult] = useState(false);
@@ -56,18 +63,33 @@ export default function PracticePage() {
 
   useEffect(() => {
     async function init() {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        router.replace("/login");
-        return;
+      setInitError(null);
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
+        if (error) {
+          setInitError(error.message);
+          return;
+        }
+        if (!user) {
+          router.replace("/login");
+          return;
+        }
+        setUserId(user.id);
+        const { data: subj, error: subjErr } = await supabase.from("subjects").select("id, name, grade");
+        if (subjErr) {
+          setInitError(subjErr.message);
+        }
+        setSubjects((subj as SubjectRow[]) ?? []);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setInitError(msg || "Failed to load practice page.");
+      } finally {
+        setLoading(false);
       }
-      setUserId(user.id);
-      const { data: subj } = await supabase.from("subjects").select("id, name, grade");
-      setSubjects((subj as SubjectRow[]) ?? []);
-      setLoading(false);
     }
     init();
   }, [router]);
@@ -102,6 +124,7 @@ export default function PracticePage() {
       setSelectedYear(null);
       setAvailableChapters([]);
       setSelectedChapter(null);
+      setFiltersError(null);
       return;
     }
     const resolvedId = subjects.find(
@@ -114,30 +137,60 @@ export default function PracticePage() {
     }
     let cancelled = false;
     async function fetchYears() {
-      const supabase = createClient();
-      const { data } = await supabase
-        .from("questions")
-        .select("year")
-        .eq("subject_id", resolvedId)
-        .eq("grade", grade)
-        .not("year", "is", null);
-      if (cancelled) return;
-      const years = [...new Set((data ?? []).map((r) => r.year as number))].sort((a, b) => b - a);
-      setAvailableYears(years);
-      setSelectedYear(null);
+      setYearsLoading(true);
+      setFiltersError(null);
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from("questions")
+          .select("year")
+          .eq("subject_id", resolvedId)
+          .eq("grade", grade)
+          .not("year", "is", null);
+        if (cancelled) return;
+        if (error) {
+          setFiltersError(error.message);
+          setAvailableYears([]);
+          return;
+        }
+        const years = [...new Set((data ?? []).map((r) => r.year as number))].sort((a, b) => b - a);
+        setAvailableYears(years);
+        setSelectedYear(null);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setFiltersError(msg || "Failed to load years.");
+        setAvailableYears([]);
+      } finally {
+        setYearsLoading(false);
+      }
     }
     async function fetchChapters() {
-      const supabase = createClient();
-      const { data } = await supabase
-        .from("questions")
-        .select("chapter")
-        .eq("subject_id", resolvedId)
-        .eq("grade", grade)
-        .not("chapter", "is", null);
-      if (cancelled) return;
-      const chaps = [...new Set((data ?? []).map((r) => (r.chapter as string).trim()).filter(Boolean))].sort();
-      setAvailableChapters(chaps);
-      setSelectedChapter(null);
+      setChaptersLoading(true);
+      setFiltersError(null);
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from("questions")
+          .select("chapter")
+          .eq("subject_id", resolvedId)
+          .eq("grade", grade)
+          .not("chapter", "is", null);
+        if (cancelled) return;
+        if (error) {
+          setFiltersError(error.message);
+          setAvailableChapters([]);
+          return;
+        }
+        const chaps = [...new Set((data ?? []).map((r) => (r.chapter as string).trim()).filter(Boolean))].sort();
+        setAvailableChapters(chaps);
+        setSelectedChapter(null);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setFiltersError(msg || "Failed to load chapters.");
+        setAvailableChapters([]);
+      } finally {
+        setChaptersLoading(false);
+      }
     }
     fetchYears();
     fetchChapters();
@@ -148,60 +201,91 @@ export default function PracticePage() {
 
   async function loadQuestions() {
     if (!subjectName || grade === "") return;
+    setQuestionsError(null);
+    setEmptyQuestionsMessage(null);
+    setNonBlockingError(null);
     const resolvedId = subjects.find(
       (s) => s.name.trim().toLowerCase() === subjectName.trim().toLowerCase() && Number(s.grade) === Number(grade)
     )?.id;
     if (!resolvedId) return;
     setSubjectId(resolvedId);
     setLoadingQuestions(true);
-    const supabase = createClient();
-    const isFull = mode === "exam" || mode === "learn";
-    const limit = isFull ? getExamQuestionCount(subjectName) : QUESTIONS_PER_SESSION * 3;
-    let query = supabase
-      .from("questions")
-      .select("*")
-      .eq("subject_id", resolvedId)
-      .eq("grade", grade);
-    if (selectedYear != null) {
-      query = query.eq("year", selectedYear);
+    try {
+      const supabase = createClient();
+      const isFull = mode === "exam" || mode === "learn";
+      const limit = isFull ? getExamQuestionCount(subjectName) : QUESTIONS_PER_SESSION * 3;
+      let query = supabase
+        .from("questions")
+        .select("*")
+        .eq("subject_id", resolvedId)
+        .eq("grade", grade);
+      if (selectedYear != null) {
+        query = query.eq("year", selectedYear);
+      }
+      if (selectedChapter != null && selectedChapter !== "") {
+        query = query.eq("chapter", selectedChapter);
+      }
+      const { data, error } = await query.limit(limit);
+      if (error) {
+        setQuestionsError(error.message);
+        setQuestions([]);
+        return;
+      }
+
+      const all = (data ?? []) as Question[];
+      if (all.length === 0) {
+        setQuestions([]);
+        setEmptyQuestionsMessage("No questions found for the selected filters.");
+        return;
+      }
+
+      const shuffled = all.sort(() => Math.random() - 0.5);
+      const toTake = isFull
+        ? Math.min(shuffled.length, getExamQuestionCount(subjectName))
+        : Math.min(QUESTIONS_PER_SESSION, shuffled.length);
+      const selected = shuffled.slice(0, toTake) as Question[];
+      setQuestions(selected);
+      setCurrentIndex(0);
+      setSelectedAnswer(null);
+      setShowResult(false);
+      setScore(0);
+      setAttempts([]);
+      setSessionLogged(false);
+      setExamSubmitted(false);
+      setExamResult(null);
+      if (mode === "exam") {
+        setExamAnswers(new Array(selected.length).fill(null));
+        startExamTimer(getExamTimeMinutes(subjectName));
+      } else {
+        setExamAnswers([]);
+        setExamSecondsLeft(null);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setQuestionsError(msg || "Failed to load questions.");
+      setQuestions([]);
+    } finally {
+      setLoadingQuestions(false);
     }
-    if (selectedChapter != null && selectedChapter !== "") {
-      query = query.eq("chapter", selectedChapter);
-    }
-    const { data } = await query.limit(limit);
-    const shuffled = (data ?? []).sort(() => Math.random() - 0.5);
-    const toTake = isFull
-      ? Math.min(shuffled.length, getExamQuestionCount(subjectName))
-      : Math.min(QUESTIONS_PER_SESSION, shuffled.length);
-    const selected = shuffled.slice(0, toTake) as Question[];
-    setQuestions(selected);
-    setCurrentIndex(0);
-    setSelectedAnswer(null);
-    setShowResult(false);
-    setScore(0);
-    setAttempts([]);
-    setSessionLogged(false);
-    setExamSubmitted(false);
-    setExamResult(null);
-    if (mode === "exam") {
-      setExamAnswers(new Array(selected.length).fill(null));
-      startExamTimer(getExamTimeMinutes(subjectName));
-    } else {
-      setExamAnswers([]);
-      setExamSecondsLeft(null);
-    }
-    setLoadingQuestions(false);
   }
 
   async function recordAttempt(questionId: number, selected: "A" | "B" | "C" | "D", correct: boolean) {
     if (!userId) return;
-    const supabase = createClient();
-    await supabase.from("attempts").insert({
-      user_id: userId,
-      question_id: questionId,
-      selected_answer: selected,
-      is_correct: correct,
-    });
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.from("attempts").insert({
+        user_id: userId,
+        question_id: questionId,
+        selected_answer: selected,
+        is_correct: correct,
+      });
+      if (error) {
+        setNonBlockingError(error.message);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setNonBlockingError(msg || "Failed to save attempt.");
+    }
   }
 
   function handleSelectAnswer(answer: "A" | "B" | "C" | "D") {
@@ -256,22 +340,29 @@ export default function PracticePage() {
   async function handleLogSession() {
     if (!userId || subjectId == null || sessionLogged) return;
     setLogging(true);
-    await logSession(userId, subjectId, score, questions.length);
-    setSessionLogged(true);
-    setLogging(false);
+    setNonBlockingError(null);
     try {
-      const supabase = createClient();
-      const { data } = await supabase
-        .from("profiles")
-        .select("current_streak")
-        .eq("id", userId)
-        .single();
-      if (data && typeof data.current_streak === "number") {
-        setStreakPopupStreak(data.current_streak);
-        setShowStreakPopup(true);
+      await logSession(userId, subjectId, score, questions.length);
+      setSessionLogged(true);
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("current_streak")
+          .eq("id", userId)
+          .single();
+        if (!error && data && typeof data.current_streak === "number") {
+          setStreakPopupStreak(data.current_streak);
+          setShowStreakPopup(true);
+        }
+      } catch {
+        // Ignore streak popup errors; logging already succeeded
       }
-    } catch {
-      // Ignore streak popup errors; logging already succeeded
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setNonBlockingError(msg || "Failed to log your session.");
+    } finally {
+      setLogging(false);
     }
   }
 
@@ -334,6 +425,17 @@ export default function PracticePage() {
           {questions.length === 0 ? (
             <div className="rounded-lg border bg-card p-6 shadow-sm space-y-4">
               <h1 className="text-xl font-bold">Practice</h1>
+
+              {initError && (
+                <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+                  {initError}
+                </div>
+              )}
+              {filtersError && (
+                <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+                  {filtersError}
+                </div>
+              )}
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Mode</label>
@@ -424,6 +526,11 @@ export default function PracticePage() {
                     onChange={(e) => setSelectedYear(e.target.value ? Number(e.target.value) : null)}
                   >
                     <option value="">All Years</option>
+                    {yearsLoading && availableYears.length === 0 && (
+                      <option value="" disabled>
+                        Loading…
+                      </option>
+                    )}
                     {availableYears.map((y) => (
                       <option key={y} value={y}>
                         {y}
@@ -442,6 +549,11 @@ export default function PracticePage() {
                     onChange={(e) => setSelectedChapter(e.target.value === "" ? null : e.target.value)}
                   >
                     <option value="">All Chapters</option>
+                    {chaptersLoading && availableChapters.length === 0 && (
+                      <option value="" disabled>
+                        Loading…
+                      </option>
+                    )}
                     {availableChapters.map((ch) => (
                       <option key={ch} value={ch}>
                         {ch}
@@ -454,6 +566,13 @@ export default function PracticePage() {
               <Button onClick={loadQuestions} disabled={!canStart} className="w-full sm:w-auto">
                 {startLabel}
               </Button>
+
+              {questionsError && (
+                <p className="text-sm text-destructive">{questionsError}</p>
+              )}
+              {emptyQuestionsMessage && (
+                <p className="text-sm text-muted-foreground">{emptyQuestionsMessage}</p>
+              )}
             </div>
           ) : showExamResult && examResult ? (
             <ExamScoreBreakdown
@@ -478,6 +597,11 @@ export default function PracticePage() {
             </div>
           ) : (
             <div className="space-y-4">
+              {nonBlockingError && (
+                <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+                  {nonBlockingError}
+                </div>
+              )}
               {mode !== "practice" && (
                 <div className="flex flex-col gap-2 rounded-lg border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="text-sm font-medium">

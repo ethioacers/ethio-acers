@@ -24,33 +24,45 @@ export default function SignupPage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    const supabase = createClient();
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-          school_name: schoolName,
-          grade: grade !== "" ? grade : null,
+    try {
+      const supabase = createClient();
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            school_name: schoolName,
+            grade: grade !== "" ? grade : null,
+          },
         },
-      },
-    });
-    if (signUpError) {
+      });
+      if (signUpError) {
+        setError(signUpError.message);
+        return;
+      }
+      if (data?.user) {
+        const { error: updateErr } = await supabase
+          .from("profiles")
+          .update({
+            full_name: fullName || null,
+            school_name: schoolName || null,
+            grade: grade !== "" ? grade : null,
+          })
+          .eq("id", data.user.id);
+        if (updateErr) {
+          setError(updateErr.message);
+          return;
+        }
+      }
+      router.push("/dashboard");
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg || "Failed to create account.");
+    } finally {
       setLoading(false);
-      setError(signUpError.message);
-      return;
     }
-    if (data?.user) {
-      await supabase.from("profiles").update({
-        full_name: fullName || null,
-        school_name: schoolName || null,
-        grade: grade !== "" ? grade : null,
-      }).eq("id", data.user.id);
-    }
-    setLoading(false);
-    router.push("/dashboard");
-    router.refresh();
   }
 
   return (

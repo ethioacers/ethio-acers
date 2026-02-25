@@ -1,17 +1,29 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 
 export function Navbar() {
   const router = useRouter();
+  const [logoutError, setLogoutError] = useState<string | null>(null);
 
   async function handleLogout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
+    setLogoutError(null);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        setLogoutError(error.message);
+        return;
+      }
+      router.push("/login");
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setLogoutError(msg || "Failed to log out.");
+    }
   }
 
   return (
@@ -25,6 +37,11 @@ export function Navbar() {
           <span className="text-sm sm:text-base">Ethio Acers</span>
         </Link>
         <div className="flex flex-wrap items-center justify-end gap-3 sm:gap-6 text-xs sm:text-sm">
+          {logoutError && (
+            <span className="max-w-[12rem] truncate text-destructive" title={logoutError}>
+              {logoutError}
+            </span>
+          )}
           <Link
             href="/dashboard"
             className="text-muted-foreground hover:text-gold transition-colors"
