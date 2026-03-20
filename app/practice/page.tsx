@@ -12,6 +12,7 @@
  import { Navbar } from "@/components/Navbar";
  import { StreakPopup } from "@/components/StreakPopup";
  import { getExamQuestionCount, getExamTimeMinutes } from "@/lib/exam-config";
+import { startUsageSession, type SessionType } from "@/lib/usage";
 
 type SubjectRow = { id: number; name: string; grade: number };
 
@@ -50,6 +51,8 @@ export default function PracticePage() {
   const [logging, setLogging] = useState(false);
   const [streakPopupStreak, setStreakPopupStreak] = useState<number | null>(null);
   const [showStreakPopup, setShowStreakPopup] = useState(false);
+  const [usageLocked, setUsageLocked] = useState<null | { sessionType: SessionType; limit: number; used: number }>(null);
+  const [usageChecking, setUsageChecking] = useState(false);
 
   // Full Exam Mode state
   const [examAnswers, setExamAnswers] = useState<( "A" | "B" | "C" | "D" | null)[]>([]);
@@ -201,6 +204,24 @@ export default function PracticePage() {
 
   async function loadQuestions() {
     if (!subjectName || grade === "") return;
+    if (userId) {
+      setUsageLocked(null);
+      setUsageChecking(true);
+      try {
+        const sessionType: SessionType = mode === "exam" ? "exam" : "practice";
+        const result = await startUsageSession(userId, sessionType);
+        if (!result.allowed) {
+          setUsageLocked({
+            sessionType,
+            limit: result.limit,
+            used: result.used,
+          });
+          return;
+        }
+      } finally {
+        setUsageChecking(false);
+      }
+    }
     setQuestionsError(null);
     setEmptyQuestionsMessage(null);
     setNonBlockingError(null);
@@ -383,7 +404,7 @@ export default function PracticePage() {
     currentIndex === questions.length - 1 &&
     showResult;
   const showExamResult = isExam && examSubmitted && examResult !== null;
-  const canStart = !!subjectName && grade !== "" && !loadingQuestions;
+  const canStart = !!subjectName && grade !== "" && !loadingQuestions && !usageChecking && !usageLocked;
 
   let startLabel = "Start session";
   if (mode === "practice") {
@@ -434,6 +455,33 @@ export default function PracticePage() {
               {filtersError && (
                 <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
                   {filtersError}
+                </div>
+              )}
+
+              {usageLocked && (
+                <div className="rounded-lg border border-yellow-500/60 bg-card/80 p-4 shadow-sm space-y-2">
+                  <div className="text-3xl" aria-hidden>
+                    🔒
+                  </div>
+                  <p className="text-sm font-medium text-foreground">
+                    You have reached your daily limit for free users.
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Contact us to upgrade to Pro and get unlimited access!
+                  </p>
+                  <Button
+                    asChild
+                    disabled={usageChecking}
+                    className="bg-gold text-black hover:bg-gold/90"
+                  >
+                    <a
+                      href="https://wa.me/0000000000"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Contact on WhatsApp
+                    </a>
+                  </Button>
                 </div>
               )}
 

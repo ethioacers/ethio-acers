@@ -9,7 +9,11 @@ create table if not exists public.profiles (
   last_session_date date,
   created_at timestamptz default now(),
   ai_requests_today int default 0,
-  ai_last_reset date default current_date
+  ai_last_reset date default current_date,
+  practice_sessions_today int default 0,
+  flashcard_sessions_today int default 0,
+  exam_sessions_today int default 0,
+  usage_last_reset date default current_date
 );
 
 -- Auto-create profile on signup
@@ -107,6 +111,12 @@ create policy "Own attempts" on attempts
 -- AI tutor: daily limit tracking (run on existing DBs)
 alter table public.profiles add column if not exists ai_requests_today int default 0;
 alter table public.profiles add column if not exists ai_last_reset date default current_date;
+
+-- Usage limits for free users (run on existing DBs)
+alter table public.profiles add column if not exists practice_sessions_today int default 0;
+alter table public.profiles add column if not exists flashcard_sessions_today int default 0;
+alter table public.profiles add column if not exists exam_sessions_today int default 0;
+alter table public.profiles add column if not exists usage_last_reset date default current_date;
 
 -- Profile: school name (run in Supabase SQL Editor)
 alter table public.profiles add column if not exists school_name text;

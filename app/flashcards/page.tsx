@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LatexRenderer } from "@/components/LatexRenderer";
+import { startUsageSession, type SessionType } from "@/lib/usage";
 
 type SubjectRow = { id: number; name: string; grade: number };
 
@@ -27,6 +28,7 @@ type Phase = "select" | "session" | "results";
 
 export default function FlashcardsPage() {
   const router = useRouter();
+  const [userId, setUserId] = useState<string | null>(null);
   const [subjects, setSubjects] = useState<SubjectRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -48,6 +50,8 @@ export default function FlashcardsPage() {
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [loadingCards, setLoadingCards] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [usageLocked, setUsageLocked] = useState<null | { sessionType: SessionType; limit: number; used: number }>(null);
+  const [usageChecking, setUsageChecking] = useState(false);
   const [startX, setStartX] = useState(0);
   const [dragX, setDragX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -69,6 +73,7 @@ export default function FlashcardsPage() {
           router.replace("/login");
           return;
         }
+        setUserId(user.id);
         const { data, error: subjErr } = await supabase
           .from("subjects")
           .select("id, name, grade");
@@ -155,6 +160,23 @@ export default function FlashcardsPage() {
 
   async function loadFlashcardsFromDb() {
     if (!selectedSubject || selectedGrade === "") return;
+    if (userId) {
+      setUsageLocked(null);
+      setUsageChecking(true);
+      try {
+        const result = await startUsageSession(userId, "flashcards");
+        if (!result.allowed) {
+          setUsageLocked({
+            sessionType: "flashcards",
+            limit: result.limit,
+            used: result.used,
+          });
+          return;
+        }
+      } finally {
+        setUsageChecking(false);
+      }
+    }
     setSessionError(null);
     setLoadingCards(true);
     try {
@@ -203,6 +225,23 @@ export default function FlashcardsPage() {
         "Please select subject, grade, and enter a topic before generating."
       );
       return;
+    }
+    if (userId) {
+      setUsageLocked(null);
+      setUsageChecking(true);
+      try {
+        const result = await startUsageSession(userId, "flashcards");
+        if (!result.allowed) {
+          setUsageLocked({
+            sessionType: "flashcards",
+            limit: result.limit,
+            used: result.used,
+          });
+          return;
+        }
+      } finally {
+        setUsageChecking(false);
+      }
     }
     setSessionError(null);
     setGenerating(true);
@@ -325,6 +364,33 @@ export default function FlashcardsPage() {
           {phase === "select" && (
             <section className="space-y-4 rounded-lg border border-muted bg-card/80 p-6 shadow-sm">
               <h2 className="font-semibold">Select subject and topic</h2>
+
+              {usageLocked && (
+                <div className="rounded-lg border border-yellow-500/60 bg-card/80 p-4 shadow-sm space-y-2">
+                  <div className="text-3xl" aria-hidden>
+                    🔒
+                  </div>
+                  <p className="text-sm font-medium text-foreground">
+                    You have reached your daily limit for free users.
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Contact us to upgrade to Pro and get unlimited access!
+                  </p>
+                  <Button
+                    asChild
+                    disabled={usageChecking}
+                    className="bg-gold text-black hover:bg-gold/90 w-full sm:w-auto"
+                  >
+                    <a
+                      href="https://wa.me/0000000000"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Contact on WhatsApp
+                    </a>
+                  </Button>
+                </div>
+              )}
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="subject">Subject</Label>
@@ -406,7 +472,11 @@ export default function FlashcardsPage() {
                   type="button"
                   onClick={loadFlashcardsFromDb}
                   disabled={
-                    !selectedSubject || selectedGrade === "" || loadingCards
+                    !!usageLocked ||
+                    usageChecking ||
+                    !selectedSubject ||
+                    selectedGrade === "" ||
+                    loadingCards
                   }
                   className="w-full sm:w-auto"
                 >
@@ -416,6 +486,8 @@ export default function FlashcardsPage() {
                   type="button"
                   onClick={handleGenerateAiFlashcards}
                   disabled={
+                    !!usageLocked ||
+                    usageChecking ||
                     !selectedSubject ||
                     selectedGrade === "" ||
                     !topic.trim() ||

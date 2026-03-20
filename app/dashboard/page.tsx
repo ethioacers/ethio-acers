@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import { getProfile, getSessionDatesForUser } from "@/lib/streak";
+import { getUsageForUser, type UsageResult } from "@/lib/usage";
 import { StreakCalendar } from "@/components/StreakCalendar";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
@@ -33,6 +34,7 @@ export default function DashboardPage() {
   const [recentSessions, setRecentSessions] = useState<SessionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [usage, setUsage] = useState<UsageResult | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -72,6 +74,14 @@ export default function DashboardPage() {
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
           setLoadError(msg || "Failed to load streak calendar.");
+        }
+
+        try {
+          const usageData = await getUsageForUser(user.id);
+          setUsage(usageData);
+        } catch (err) {
+          // Non-fatal: dashboard can still render without usage
+          console.error("dashboard usage load error:", err);
         }
 
         const { count: attemptsTotal, error: attemptsErr } = await supabase
@@ -222,6 +232,29 @@ export default function DashboardPage() {
               <Link href="/profile">View Profile</Link>
             </Button>
           </div>
+
+          {/* Usage limits (free users) */}
+          {usage && (
+            <div className="rounded-lg border border-muted bg-card p-4 shadow-sm">
+              {usage.isPro ? (
+                <p className="text-sm font-medium text-gold">
+                  ✨ Pro — Unlimited Access
+                </p>
+              ) : (
+                <div className="space-y-1 text-sm">
+                  <p className="font-medium text-gold">
+                    Practice: {usage.practiceUsed}/2 sessions used today
+                  </p>
+                  <p className="font-medium text-gold">
+                    Flashcards: {usage.flashcardsUsed}/1 sessions used today
+                  </p>
+                  <p className="font-medium text-gold">
+                    Full Exam: {usage.examUsed}/1 sessions used today
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Features overview */}
           <section className="space-y-4">
