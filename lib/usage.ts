@@ -104,6 +104,18 @@ export async function incrementUsage(userId: string, sessionType: SessionType): 
   return await getUsageForUser(userId);
 }
 
+export async function incrementPracticeSession(userId: string): Promise<UsageResult> {
+  return incrementUsage(userId, "practice");
+}
+
+export async function incrementFlashcardSession(userId: string): Promise<UsageResult> {
+  return incrementUsage(userId, "flashcards");
+}
+
+export async function incrementExamSession(userId: string): Promise<UsageResult> {
+  return incrementUsage(userId, "exam");
+}
+
 export async function startUsageSession(
   userId: string,
   sessionType: SessionType
