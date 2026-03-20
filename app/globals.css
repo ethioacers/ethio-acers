@@ -4,7 +4,27 @@
 
 @layer base {
   :root {
-    /* Dark theme + green */
+    /* Light theme */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 10%;
+    --primary: 142 76% 42%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 0 0% 10%;
+    --muted: 220 14% 94%;
+    --muted-foreground: 220 10% 40%;
+    --accent: 220 14% 96%;
+    --accent-foreground: 0 0% 10%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --input: 220 14% 90%;
+    --ring: 142 76% 42%;
+    --gold: 43 96% 56%;
+    --radius: 0.5rem;
+  }
+
+  html.dark {
+    /* Dark theme + green (existing look) */
     --background: 0 0% 6%;
     --foreground: 0 0% 94%;
     --primary: 142 76% 42%;
@@ -40,6 +60,6 @@ body {
 }
 
 .select-theme option {
-  background: hsl(220 14% 10%);
-  color: hsl(0 0% 94%);
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
 }

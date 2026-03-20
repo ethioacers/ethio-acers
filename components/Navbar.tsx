@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function Navbar() {
   const router = useRouter();
@@ -79,6 +80,9 @@ export function Navbar() {
           >
             Logout
           </button>
+          <div className="flex items-center">
+            <ThemeToggle />
+          </div>
         </div>
       </div>
     </nav>

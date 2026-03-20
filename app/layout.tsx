@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ThemeProvider } from "next-themes";
 
 export const metadata: Metadata = {
   title: "Ethio Acers",
@@ -12,8 +13,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className="min-h-screen antialiased bg-background text-foreground">{children}</body>
+    <html lang="en">
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+        <body className="min-h-screen antialiased bg-background text-foreground">
+          {children}
+        </body>
+      </ThemeProvider>
     </html>
   );
 }
