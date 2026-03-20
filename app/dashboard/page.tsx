@@ -346,6 +346,20 @@ export default function DashboardPage() {
           )}
 
           {/* Features overview */}
+          {usage && !usage.isPro && (
+            <div className="md:hidden">
+              <Button asChild className="w-full bg-gold text-black hover:bg-gold/90">
+                <Link href="/pricing">View Plans</Link>
+              </Button>
+            </div>
+          )}
+          {usage && !usage.isPro && (
+            <div className="hidden md:block">
+              <Button asChild className="w-auto bg-gold text-black hover:bg-gold/90">
+                <Link href="/pricing">View Plans</Link>
+              </Button>
+            </div>
+          )}
           <section className="space-y-4">
             <h2 className="text-lg font-semibold">
               Everything You Need to Ace Your Exams{" "}

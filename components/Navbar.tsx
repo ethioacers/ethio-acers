@@ -54,6 +54,12 @@ export function Navbar() {
               Dashboard
             </Link>
             <Link
+              href="/pricing"
+              className="text-muted-foreground hover:text-gold transition-colors"
+            >
+              Pricing
+            </Link>
+            <Link
               href="/practice"
               className="text-muted-foreground hover:text-gold transition-colors"
             >
@@ -115,6 +121,13 @@ export function Navbar() {
               <path d="M8 8h8M8 12h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
             </svg>
             Notes
+          </Link>
+          <Link href="/pricing" className="flex flex-1 flex-col items-center justify-center gap-0.5 text-xs text-muted-foreground">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path d="M12 1 3 5v6c0 5 3.3 10.4 9 12 5.7-1.6 9-7 9-12V5l-9-4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+              <path d="M9.5 10.5 11 12l3.5-3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Plans
           </Link>
           <Link href="/flashcards" className="flex flex-1 flex-col items-center justify-center gap-0.5 text-xs text-muted-foreground">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
