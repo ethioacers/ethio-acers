@@ -17,7 +17,7 @@ type SessionRow = {
   total: number | null;
   session_date: string;
   created_at: string;
-  subjects?: { name: string }[] | null;
+  subjects?: { name: string } | null;
 };
 
 export default function DashboardPage() {
@@ -108,20 +108,12 @@ export default function DashboardPage() {
         }
         setTotalSessions(sessionsCount ?? 0);
 
-        const { data: sessions, error: sessionsErr } = await supabase
-          .from("sessions")
-          .select(`
-            id,
-            subject_id,
-            score,
-            total,
-            session_date,
-            created_at,
-            subjects(name)
-          `)
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(5);
+      const { data: sessions, error: sessionsErr } = await supabase
+        .from("sessions")
+        .select("id, score, total, session_date, subject_id, subjects(name)")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(5);
         if (sessionsErr) {
           setLoadError(sessionsErr.message);
         }
@@ -153,10 +145,10 @@ export default function DashboardPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen p-3 sm:p-6">
+      <main className="min-h-screen p-4 sm:p-6">
         <div className="mx-auto max-w-2xl space-y-6">
           {loadError && (
-            <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 sm:p-4 text-sm text-destructive">
+            <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 sm:p-4 text-sm text-destructive">
               {loadError}
             </div>
           )}
@@ -173,9 +165,9 @@ export default function DashboardPage() {
           </div>
 
           {/* Streak card */}
-          <div className="rounded-lg border border-muted bg-card p-3 sm:p-6 shadow-sm space-y-4">
+          <div className="rounded-lg border border-muted bg-card p-4 sm:p-6 shadow-sm space-y-4">
             <div className="flex items-center gap-2">
-              <span className="text-3xl" role="img" aria-label="flame">
+              <span className="hidden md:inline text-3xl" role="img" aria-label="flame">
                 🔥
               </span>
               <span className="text-2xl font-bold text-gold">{streak}</span>
@@ -186,28 +178,55 @@ export default function DashboardPage() {
 
           {/* Stats row */}
           <div className="grid gap-4 grid-cols-2 md:grid-cols-3">
-            <div className="rounded-lg border border-muted bg-card p-3 sm:p-4 shadow-sm">
+            <div className="rounded-lg border border-muted bg-card p-4 shadow-sm h-full">
               <p className="text-xs font-medium text-muted-foreground">
                 Questions answered
               </p>
-              <p className="text-xl sm:text-2xl font-bold text-gold">{totalAttempts}</p>
+              <p className="text-lg sm:text-2xl font-bold text-gold">{totalAttempts}</p>
             </div>
-            <div className="rounded-lg border border-muted bg-card p-3 sm:p-4 shadow-sm">
+            <div className="rounded-lg border border-muted bg-card p-4 shadow-sm h-full">
               <p className="text-xs font-medium text-muted-foreground">
                 Accuracy
               </p>
-              <p className="text-xl sm:text-2xl font-bold text-gold">{accuracy}%</p>
+              <p className="text-lg sm:text-2xl font-bold text-gold">{accuracy}%</p>
             </div>
-            <div className="rounded-lg border border-muted bg-card p-3 sm:p-4 shadow-sm">
+            <div className="rounded-lg border border-muted bg-card p-4 shadow-sm h-full col-span-2 md:col-span-1">
               <p className="text-xs font-medium text-muted-foreground">
                 Sessions completed
               </p>
-              <p className="text-xl sm:text-2xl font-bold text-gold">{totalSessions}</p>
+              <p className="text-lg sm:text-2xl font-bold text-gold">{totalSessions}</p>
             </div>
           </div>
 
           {/* Quick actions */}
-          <div className="grid grid-cols-2 gap-3 md:flex md:flex-wrap md:gap-3">
+          <div className="md:hidden grid grid-cols-2 gap-3">
+            <Button
+              asChild
+              size="lg"
+              className="col-span-2 bg-gold text-black hover:bg-gold/90 w-full"
+            >
+              <Link href="/practice">Start Practice</Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="w-full"
+            >
+              <Link href="/notes">Notes</Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="w-full"
+            >
+              <Link href="/profile">View Profile</Link>
+            </Button>
+          </div>
+
+          {/* Desktop quick actions unchanged */}
+          <div className="hidden md:grid md:grid-cols-2 md:gap-3 md:flex md:flex-wrap md:gap-3">
             <Button
               asChild
               size="lg"
@@ -250,35 +269,91 @@ export default function DashboardPage() {
 
           {/* Usage limits (free users) */}
           {usage && (
-            <div className="rounded-lg border border-muted bg-card p-4 shadow-sm">
-              {usage.isPro ? (
-                <p className="text-sm font-medium text-gold">
-                  ✨ Pro — Unlimited Access
-                </p>
-              ) : (
-                <div className="space-y-1 text-sm">
-                  <p className="font-medium text-gold">
-                    Practice: {usage.practiceUsed}/2 sessions used today
+            <>
+              {/* Desktop usage unchanged */}
+              <div className="hidden md:block rounded-lg border border-muted bg-card p-4 shadow-sm">
+                {usage.isPro ? (
+                  <p className="text-sm font-medium text-gold">
+                    ✨ Pro — Unlimited Access
                   </p>
-                  <p className="font-medium text-gold">
-                    Flashcards: {usage.flashcardsUsed}/1 sessions used today
-                  </p>
-                  <p className="font-medium text-gold">
-                    Full Exam: {usage.examUsed}/1 sessions used today
-                  </p>
-                </div>
-              )}
-            </div>
+                ) : (
+                  <div className="space-y-1 text-sm">
+                    <p className="font-medium text-gold">
+                      Practice: {usage.practiceUsed}/2 sessions used today
+                    </p>
+                    <p className="font-medium text-gold">
+                      Flashcards: {usage.flashcardsUsed}/1 sessions used today
+                    </p>
+                    <p className="font-medium text-gold">
+                      Full Exam: {usage.examUsed}/1 sessions used today
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Mobile compact usage */}
+              <div className="md:hidden rounded-lg border border-muted bg-card p-4 shadow-sm space-y-3">
+                {usage.isPro ? (
+                  <p className="text-sm font-medium text-gold">Pro — Unlimited Access</p>
+                ) : (
+                  <>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Practice</span>
+                        <span className="font-medium text-foreground">
+                          {usage.practiceUsed}/2
+                        </span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full bg-gold"
+                          style={{ width: `${Math.min(100, (usage.practiceUsed / 2) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Flashcards</span>
+                        <span className="font-medium text-foreground">
+                          {usage.flashcardsUsed}/1
+                        </span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full bg-gold"
+                          style={{ width: `${Math.min(100, (usage.flashcardsUsed / 1) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Full Exam</span>
+                        <span className="font-medium text-foreground">
+                          {usage.examUsed}/1
+                        </span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full bg-gold"
+                          style={{ width: `${Math.min(100, (usage.examUsed / 1) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </>
           )}
 
           {/* Features overview */}
           <section className="space-y-4">
             <h2 className="text-lg font-semibold">
-              Everything You Need to Ace Your Exams 🎓
+              Everything You Need to Ace Your Exams{" "}
+              <span className="hidden md:inline">🎓</span>
             </h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <div className="rounded-xl border border-yellow-500/60 bg-card/80 p-4 shadow-lg shadow-yellow-500/10">
-                <div className="text-3xl mb-2">🤖</div>
+                <div className="hidden md:block text-3xl mb-2">🤖</div>
                 <h3 className="font-semibold mb-1">AI-Powered Explanations</h3>
                 <p className="text-sm text-muted-foreground">
                   Got a question wrong? Our AI tutor explains exactly why the correct answer is right, step by step in
@@ -287,7 +362,7 @@ export default function DashboardPage() {
               </div>
 
               <div className="rounded-xl border border-yellow-500/60 bg-card/80 p-4 shadow-lg shadow-yellow-500/10">
-                <div className="text-3xl mb-2">📝</div>
+                <div className="hidden md:block text-3xl mb-2">📝</div>
                 <h3 className="font-semibold mb-1">Past Exam Questions</h3>
                 <p className="text-sm text-muted-foreground">
                   Practice thousands of real past exam questions filtered by subject, grade, chapter and year. Build
@@ -296,7 +371,7 @@ export default function DashboardPage() {
               </div>
 
               <div className="rounded-xl border border-yellow-500/60 bg-card/80 p-4 shadow-lg shadow-yellow-500/10">
-                <div className="text-3xl mb-2">📖</div>
+                <div className="hidden md:block text-3xl mb-2">📖</div>
                 <h3 className="font-semibold mb-1">Study Notes &amp; AI Summaries</h3>
                 <p className="text-sm text-muted-foreground">
                   Access textbook summaries or generate instant AI notes on any topic you need help with.
@@ -304,7 +379,7 @@ export default function DashboardPage() {
               </div>
 
               <div className="rounded-xl border border-yellow-500/60 bg-card/80 p-4 shadow-lg shadow-yellow-500/10">
-                <div className="text-3xl mb-2">🔥</div>
+                <div className="hidden md:block text-3xl mb-2">🔥</div>
                 <h3 className="font-semibold mb-1">Daily Streak Tracking</h3>
                 <p className="text-sm text-muted-foreground">
                   Build a daily study habit and track your consistency with a visual streak calendar. Never miss a day!
@@ -312,7 +387,7 @@ export default function DashboardPage() {
               </div>
 
               <div className="rounded-xl border border-yellow-500/60 bg-card/80 p-4 shadow-lg shadow-yellow-500/10">
-                <div className="text-3xl mb-2">📊</div>
+                <div className="hidden md:block text-3xl mb-2">📊</div>
                 <h3 className="font-semibold mb-1">Timed Full Exams</h3>
                 <p className="text-sm text-muted-foreground">
                   Simulate the real national exam experience with full timed mock exams. Get a detailed score breakdown
@@ -321,7 +396,7 @@ export default function DashboardPage() {
               </div>
 
               <div className="rounded-xl border border-yellow-500/60 bg-card/80 p-4 shadow-lg shadow-yellow-500/10">
-                <div className="text-3xl mb-2">🎯</div>
+                <div className="hidden md:block text-3xl mb-2">🎯</div>
                 <h3 className="font-semibold mb-1">Track Your Progress</h3>
                 <p className="text-sm text-muted-foreground">
                   See your accuracy, total questions answered, and study sessions at a glance. Know exactly where you
@@ -332,7 +407,7 @@ export default function DashboardPage() {
           </section>
 
           {/* Recent sessions */}
-          <div className="rounded-lg border border-muted bg-card p-3 sm:p-6 shadow-sm">
+          <div className="rounded-lg border border-muted bg-card p-4 sm:p-6 shadow-sm">
             <h2 className="font-semibold mb-4">Recent sessions</h2>
             {recentSessions.length === 0 ? (
               <p className="text-sm text-muted-foreground">
@@ -346,7 +421,7 @@ export default function DashboardPage() {
                     className="flex items-center justify-between text-sm"
                   >
                     <span>
-                      {s.subjects?.[0]?.name ?? "Unknown"}
+                      {s.subjects?.name ?? "Unknown"}
                       {s.score != null && s.total != null && (
                         <span className="text-muted-foreground ml-2">
                           {s.score}/{s.total}

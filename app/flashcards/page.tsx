@@ -349,7 +349,7 @@ export default function FlashcardsPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-background p-3 sm:p-6">
+      <main className="min-h-screen bg-background p-4 sm:p-6">
         <div className="mx-auto flex max-w-2xl flex-col gap-6">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gold">Flashcards</h1>
@@ -362,13 +362,16 @@ export default function FlashcardsPage() {
           )}
 
           {phase === "select" && (
-            <section className="space-y-4 rounded-lg border border-muted bg-card/80 p-3 sm:p-6 shadow-sm">
+            <section className="space-y-4 rounded-lg border border-muted bg-card/80 p-4 sm:p-6 shadow-sm">
               <h2 className="font-semibold">Select subject and topic</h2>
 
               {usageLocked && (
                 <div className="rounded-lg border border-yellow-500/60 bg-card/80 p-4 shadow-sm space-y-2">
-                  <div className="text-3xl" aria-hidden>
-                    🔒
+                  <div className="text-3xl text-gold" aria-hidden>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                      <path d="M6 11h12v10H6V11Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+                    </svg>
                   </div>
                   <p className="text-sm font-medium text-foreground">
                     You have reached your daily limit for free users.
@@ -584,12 +587,16 @@ export default function FlashcardsPage() {
                     </div>
                     {dragX > 40 && (
                       <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                        <span className="text-6xl text-emerald-500">✅</span>
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" aria-hidden className="text-emerald-500">
+                          <path d="M20 6 9 17l-5-5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
                       </div>
                     )}
                     {dragX < -40 && (
                       <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                        <span className="text-6xl text-red-500">❌</span>
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" aria-hidden className="text-red-500">
+                          <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
                       </div>
                     )}
                   </div>
@@ -603,21 +610,21 @@ export default function FlashcardsPage() {
                   className="w-full border-red-500/60 text-red-500 hover:bg-red-500/10"
                   onClick={() => handleMark("review")}
                 >
-                  ❌ Review again
+                  <span className="hidden md:inline">❌ </span>Review again
                 </Button>
                 <Button
                   type="button"
                   className="w-full bg-emerald-600 text-white hover:bg-emerald-500"
                   onClick={() => handleMark("known")}
                 >
-                  ✅ Got it
+                  <span className="hidden md:inline">✅ </span>Got it
                 </Button>
               </div>
             </section>
           )}
 
           {phase === "results" && (
-            <section className="space-y-4 rounded-lg border border-muted bg-card/80 p-3 sm:p-6 shadow-sm">
+            <section className="space-y-4 rounded-lg border border-muted bg-card/80 p-4 sm:p-6 shadow-sm">
               <h2 className="text-lg font-semibold">Session complete</h2>
               <p className="text-sm text-muted-foreground">
                 Known:{" "}

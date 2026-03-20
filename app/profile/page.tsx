@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Navbar } from "@/components/Navbar";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const GRADES = [9, 10, 11, 12];
 
@@ -24,6 +25,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -96,6 +98,23 @@ export default function ProfilePage() {
     load();
   }, [router]);
 
+  async function handleLogout() {
+    setLogoutError(null);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        setLogoutError(error.message);
+        return;
+      }
+      router.push("/login");
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setLogoutError(msg || "Failed to log out.");
+    }
+  }
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!userId) return;
@@ -156,7 +175,7 @@ export default function ProfilePage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen p-3 sm:p-6">
+      <main className="min-h-screen p-4 sm:p-6">
         <div className="mx-auto max-w-lg space-y-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h1 className="text-2xl font-bold">Profile</h1>
@@ -174,7 +193,21 @@ export default function ProfilePage() {
             </div>
           )}
 
-          <form onSubmit={handleSave} className="space-y-6 rounded-lg border bg-card p-3 sm:p-6 shadow-sm">
+          {/* Mobile-only: logout + theme toggle */}
+          <div className="rounded-lg border border-muted bg-card p-4 shadow-sm md:hidden">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <ThemeToggle />
+                <span className="text-sm font-medium">Dark Mode / Light Mode</span>
+              </div>
+              <Button type="button" variant="outline" onClick={handleLogout} className="shrink-0">
+                Logout
+              </Button>
+            </div>
+            {logoutError && <p className="mt-2 text-xs text-destructive">{logoutError}</p>}
+          </div>
+
+          <form onSubmit={handleSave} className="space-y-6 rounded-lg border bg-card p-4 sm:p-6 shadow-sm">
             <div className="space-y-2">
               <Label htmlFor="fullName">Full name</Label>
               <Input

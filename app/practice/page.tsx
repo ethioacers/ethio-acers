@@ -435,7 +435,7 @@ export default function PracticePage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen p-3 sm:p-6">
+      <main className="min-h-screen p-4 sm:p-6">
         <div className="mx-auto max-w-2xl space-y-6">
           <div className="flex items-center justify-between">
             <Link href="/dashboard" className="text-sm text-muted-foreground hover:underline">
@@ -444,7 +444,7 @@ export default function PracticePage() {
           </div>
 
           {questions.length === 0 ? (
-            <div className="rounded-lg border bg-card p-3 sm:p-6 shadow-sm space-y-4">
+            <div className="rounded-lg border bg-card p-4 sm:p-6 shadow-sm space-y-4">
               <h1 className="text-xl font-bold">Practice</h1>
 
               {initError && (
@@ -460,8 +460,11 @@ export default function PracticePage() {
 
               {usageLocked && (
                 <div className="rounded-lg border border-yellow-500/60 bg-card/80 p-4 shadow-sm space-y-2">
-                  <div className="text-3xl" aria-hidden>
-                    🔒
+                  <div className="text-3xl text-gold" aria-hidden>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                      <path d="M6 11h12v10H6V11Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+                    </svg>
                   </div>
                   <p className="text-sm font-medium text-foreground">
                     You have reached your daily limit for free users.

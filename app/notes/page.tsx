@@ -228,7 +228,7 @@ export default function NotesPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen p-3 sm:p-6">
+      <main className="min-h-screen p-4 sm:p-6">
         <div className="mx-auto max-w-2xl space-y-8">
           {initError && (
             <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 sm:p-4 text-sm text-destructive">
@@ -246,7 +246,7 @@ export default function NotesPage() {
           </div>
 
           {/* Stored Notes section */}
-          <section className="rounded-lg border border-muted bg-card p-3 sm:p-6 shadow-sm">
+          <section className="rounded-lg border border-muted bg-card p-4 sm:p-6 shadow-sm">
             <h2 className="mb-4 font-semibold">Stored Notes</h2>
             <div className="mb-4 grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
@@ -355,7 +355,7 @@ export default function NotesPage() {
           </section>
 
           {/* AI Notes section */}
-          <section className="rounded-lg border border-muted bg-card p-3 sm:p-6 shadow-sm">
+          <section className="rounded-lg border border-muted bg-card p-4 sm:p-6 shadow-sm">
             <h2 className="mb-4 font-semibold">AI Notes</h2>
             <div className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
