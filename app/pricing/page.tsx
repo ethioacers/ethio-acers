@@ -1,4 +1,6 @@
-import Link from "next/link";
+ "use client";
+
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 type Plan = {
@@ -13,6 +15,7 @@ type Plan = {
 };
 
 const TELEGRAM_CONTACT = "https://t.me/yourusername";
+const TELEGRAM_SCREENSHOT = "https://t.me/GEMTA_1";
 
 const plans: Plan[] = [
   {
@@ -65,6 +68,36 @@ const plans: Plan[] = [
 ];
 
 export default function PricingPage() {
+  const [activePlanKey, setActivePlanKey] = useState<Plan["key"] | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const activePlan = useMemo(
+    () => plans.find((p) => p.key === activePlanKey) ?? null,
+    [activePlanKey]
+  );
+
+  function openProModal(planKey: Plan["key"]) {
+    setActivePlanKey(planKey);
+    setIsModalOpen(true);
+  }
+
+  function closeModal() {
+    setIsModalOpen(false);
+  }
+
+  function getModalPrice(planKey: Plan["key"]) {
+    if (planKey === "pro_monthly") return "78 ETB/mo";
+    return "248 ETB/3mo";
+  }
+
+  async function copyToClipboard(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // no-op; clipboard can fail in some environments
+    }
+  }
+
   return (
     <main className="min-h-screen p-4 sm:p-6 pb-12">
       <div className="mx-auto max-w-3xl space-y-6">
@@ -134,8 +167,12 @@ export default function PricingPage() {
                       {plan.cta.label}
                     </Button>
                   ) : (
-                    <Button asChild className="w-full bg-gold text-black hover:bg-gold/90">
-                      <Link href="/profile">{plan.cta.label}</Link>
+                    <Button
+                      type="button"
+                      className="w-full bg-gold text-black hover:bg-gold/90"
+                      onClick={() => openProModal(plan.key)}
+                    >
+                      {plan.cta.label}
                     </Button>
                   )}
                 </div>
@@ -173,6 +210,114 @@ export default function PricingPage() {
           </div>
         </section>
       </div>
+
+      {/* Payment instruction modal */}
+      {isModalOpen && activePlan && (
+        <div
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 p-3 sm:items-center"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) closeModal();
+          }}
+        >
+          <div className="w-full max-w-lg rounded-xl border border-yellow-500/50 bg-card shadow-xl">
+            <div className="flex items-start justify-between gap-4 border-b border-muted/60 p-4">
+              <div>
+                <h2 className="text-lg font-bold text-gold">How to Activate Pro</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {activePlan.name} — {getModalPrice(activePlan.key)}
+                </p>
+              </div>
+              <Button type="button" variant="outline" onClick={closeModal} className="shrink-0">
+                Close
+              </Button>
+            </div>
+
+            <div className="space-y-5 p-4">
+              {/* Step 1 */}
+              <div className="space-y-2">
+                <h3 className="font-semibold">Step 1 — Choose payment method:</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-lg border border-muted bg-card p-3 text-sm">
+                    📱 Telebirr
+                  </div>
+                  <div className="rounded-lg border border-muted bg-card p-3 text-sm">
+                    🏦 CBE and Awash
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 2 */}
+              <div className="space-y-2">
+                <h3 className="font-semibold">Step 2 — Send payment to:</h3>
+                <div className="space-y-3 rounded-lg border border-muted bg-card p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Account Name</p>
+                      <p className="text-sm font-medium">GEMTA ZELALEM</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Account Number</p>
+                      <p className="text-sm font-medium">
+                        Awash 013201644054900{" "}
+                        <span className="text-muted-foreground">CBE 1000561325662</span>
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="sm:shrink-0"
+                      onClick={() =>
+                        copyToClipboard(
+                          "Awash 013201644054900 CBE 1000561325662"
+                        )
+                      }
+                    >
+                      Copy
+                    </Button>
+                  </div>
+
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Phone</p>
+                      <p className="text-sm font-medium">0904324277</p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="sm:shrink-0"
+                      onClick={() => copyToClipboard("0904324277")}
+                    >
+                      Copy
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 3 */}
+              <div className="space-y-3">
+                <h3 className="font-semibold">Step 3 — Send confirmation:</h3>
+                <p className="text-sm text-muted-foreground">
+                  After payment, send your screenshot and full name to our Telegram:
+                </p>
+                <Button asChild className="w-full bg-gold text-black hover:bg-gold/90">
+                  <a href={TELEGRAM_SCREENSHOT} target="_blank" rel="noopener noreferrer">
+                    Send Screenshot on Telegram
+                  </a>
+                </Button>
+              </div>
+            </div>
+
+            <div className="border-t border-muted/60 p-4">
+              <p className="text-sm font-medium text-gold">
+                🎉 Free 2-week trial available — just contact us on Telegram!
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
