@@ -14,6 +14,7 @@ export type StudyNotesInput = {
 };
 
 function createGroqClient() {
+  console.log('GROQ KEY EXISTS:', !!process.env.GROQ_API_KEY);
   const apiKey = (process.env.GROQ_API_KEY ?? "").trim();
   if (!apiKey) {
     throw new Error("GROQ_API_KEY is not set in environment");

@@ -37,6 +37,7 @@ function getGroqApiKey(): string {
 
 export async function POST(request: Request) {
   try {
+    console.log('GROQ KEY EXISTS:', !!process.env.GROQ_API_KEY);
     const supabase = await createServerSupabaseClient();
     const {
       data: { user },
