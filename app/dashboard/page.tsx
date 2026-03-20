@@ -153,10 +153,10 @@ export default function DashboardPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen p-4 sm:p-6">
+      <main className="min-h-screen p-3 sm:p-6">
         <div className="mx-auto max-w-2xl space-y-6">
           {loadError && (
-            <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+            <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 sm:p-4 text-sm text-destructive">
               {loadError}
             </div>
           )}
@@ -173,7 +173,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Streak card */}
-          <div className="rounded-lg border border-muted bg-card p-6 shadow-sm space-y-4">
+          <div className="rounded-lg border border-muted bg-card p-3 sm:p-6 shadow-sm space-y-4">
             <div className="flex items-center gap-2">
               <span className="text-3xl" role="img" aria-label="flame">
                 🔥
@@ -185,51 +185,66 @@ export default function DashboardPage() {
           </div>
 
           {/* Stats row */}
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="rounded-lg border border-muted bg-card p-4 shadow-sm">
+          <div className="grid gap-4 grid-cols-2 md:grid-cols-3">
+            <div className="rounded-lg border border-muted bg-card p-3 sm:p-4 shadow-sm">
               <p className="text-xs font-medium text-muted-foreground">
                 Questions answered
               </p>
-              <p className="text-2xl font-bold text-gold">{totalAttempts}</p>
+              <p className="text-xl sm:text-2xl font-bold text-gold">{totalAttempts}</p>
             </div>
-            <div className="rounded-lg border border-muted bg-card p-4 shadow-sm">
+            <div className="rounded-lg border border-muted bg-card p-3 sm:p-4 shadow-sm">
               <p className="text-xs font-medium text-muted-foreground">
                 Accuracy
               </p>
-              <p className="text-2xl font-bold text-gold">{accuracy}%</p>
+              <p className="text-xl sm:text-2xl font-bold text-gold">{accuracy}%</p>
             </div>
-            <div className="rounded-lg border border-muted bg-card p-4 shadow-sm">
+            <div className="rounded-lg border border-muted bg-card p-3 sm:p-4 shadow-sm">
               <p className="text-xs font-medium text-muted-foreground">
                 Sessions completed
               </p>
-              <p className="text-2xl font-bold text-gold">{totalSessions}</p>
+              <p className="text-xl sm:text-2xl font-bold text-gold">{totalSessions}</p>
             </div>
           </div>
 
           {/* Quick actions */}
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-2 gap-3 md:flex md:flex-wrap md:gap-3">
             <Button
               asChild
               size="lg"
-              className="w-full sm:w-auto bg-gold text-black hover:bg-gold/90"
+              className="w-full aspect-square md:w-auto md:aspect-auto bg-gold text-black hover:bg-gold/90 flex flex-col items-center justify-center gap-1"
             >
-              <Link href="/practice">Start Practice</Link>
+              <Link href="/practice" className="flex flex-col items-center justify-center gap-1">
+                <span className="text-2xl sm:hidden" aria-hidden>
+                  📝
+                </span>
+                <span className="sm:text-sm">Start Practice</span>
+              </Link>
             </Button>
             <Button
               asChild
               variant="outline"
               size="lg"
-              className="w-full sm:w-auto"
+              className="w-full aspect-square md:w-auto md:aspect-auto flex flex-col items-center justify-center gap-1"
             >
-              <Link href="/notes">Notes</Link>
+              <Link href="/notes" className="flex flex-col items-center justify-center gap-1">
+                <span className="text-2xl sm:hidden" aria-hidden>
+                  📖
+                </span>
+                <span className="sm:text-sm">Notes</span>
+              </Link>
             </Button>
             <Button
               asChild
               variant="outline"
               size="lg"
-              className="w-full sm:w-auto"
+              className="w-full aspect-square md:w-auto md:aspect-auto flex flex-col items-center justify-center gap-1"
             >
-              <Link href="/profile">View Profile</Link>
+              <Link href="/profile" className="flex flex-col items-center justify-center gap-1">
+                <span className="text-2xl sm:hidden" aria-hidden>
+                  👤
+                </span>
+                <span className="sm:text-sm">View Profile</span>
+              </Link>
             </Button>
           </div>
 
@@ -317,7 +332,7 @@ export default function DashboardPage() {
           </section>
 
           {/* Recent sessions */}
-          <div className="rounded-lg border border-muted bg-card p-6 shadow-sm">
+          <div className="rounded-lg border border-muted bg-card p-3 sm:p-6 shadow-sm">
             <h2 className="font-semibold mb-4">Recent sessions</h2>
             {recentSessions.length === 0 ? (
               <p className="text-sm text-muted-foreground">

@@ -339,7 +339,7 @@ export default function FlashcardsPage() {
     return (
       <>
         <Navbar />
-        <main className="flex min-h-screen items-center justify-center bg-background p-4">
+        <main className="flex min-h-screen items-center justify-center bg-background p-3">
           <p className="text-muted-foreground">Loading…</p>
         </main>
       </>
@@ -349,7 +349,7 @@ export default function FlashcardsPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-background p-4 sm:p-6">
+      <main className="min-h-screen bg-background p-3 sm:p-6">
         <div className="mx-auto flex max-w-2xl flex-col gap-6">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gold">Flashcards</h1>
@@ -362,7 +362,7 @@ export default function FlashcardsPage() {
           )}
 
           {phase === "select" && (
-            <section className="space-y-4 rounded-lg border border-muted bg-card/80 p-6 shadow-sm">
+            <section className="space-y-4 rounded-lg border border-muted bg-card/80 p-3 sm:p-6 shadow-sm">
               <h2 className="font-semibold">Select subject and topic</h2>
 
               {usageLocked && (
@@ -382,11 +382,11 @@ export default function FlashcardsPage() {
                     className="bg-gold text-black hover:bg-gold/90 w-full sm:w-auto"
                   >
                     <a
-                      href="https://wa.me/0000000000"
+                      href="https://t.me/ethioacers"
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      Contact on WhatsApp
+                      Contact on Telegram
                     </a>
                   </Button>
                 </div>
@@ -617,7 +617,7 @@ export default function FlashcardsPage() {
           )}
 
           {phase === "results" && (
-            <section className="space-y-4 rounded-lg border border-muted bg-card/80 p-6 shadow-sm">
+            <section className="space-y-4 rounded-lg border border-muted bg-card/80 p-3 sm:p-6 shadow-sm">
               <h2 className="text-lg font-semibold">Session complete</h2>
               <p className="text-sm text-muted-foreground">
                 Known:{" "}

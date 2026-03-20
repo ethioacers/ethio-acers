@@ -43,36 +43,40 @@ export function Navbar() {
               {logoutError}
             </span>
           )}
-          <Link
-            href="/dashboard"
-            className="text-muted-foreground hover:text-gold transition-colors"
-          >
-            Dashboard
-          </Link>
-          <Link
-            href="/practice"
-            className="text-muted-foreground hover:text-gold transition-colors"
-          >
-            Practice
-          </Link>
-          <Link
-            href="/notes"
-            className="text-muted-foreground hover:text-gold transition-colors"
-          >
-            Notes
-          </Link>
-          <Link
-            href="/flashcards"
-            className="text-muted-foreground hover:text-gold transition-colors"
-          >
-            Flashcards
-          </Link>
-          <Link
-            href="/profile"
-            className="text-muted-foreground hover:text-gold transition-colors"
-          >
-            Profile
-          </Link>
+
+          <div className="hidden md:flex flex-wrap items-center gap-6">
+            <Link
+              href="/dashboard"
+              className="text-muted-foreground hover:text-gold transition-colors"
+            >
+              Dashboard
+            </Link>
+            <Link
+              href="/practice"
+              className="text-muted-foreground hover:text-gold transition-colors"
+            >
+              Practice
+            </Link>
+            <Link
+              href="/notes"
+              className="text-muted-foreground hover:text-gold transition-colors"
+            >
+              Notes
+            </Link>
+            <Link
+              href="/flashcards"
+              className="text-muted-foreground hover:text-gold transition-colors"
+            >
+              Flashcards
+            </Link>
+            <Link
+              href="/profile"
+              className="text-muted-foreground hover:text-gold transition-colors"
+            >
+              Profile
+            </Link>
+          </div>
+
           <button
             type="button"
             onClick={handleLogout}
@@ -83,6 +87,42 @@ export function Navbar() {
           <div className="flex items-center">
             <ThemeToggle />
           </div>
+        </div>
+      </div>
+
+      {/* Mobile bottom navigation */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t border-muted bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="mx-auto flex max-w-4xl items-stretch justify-between px-2 py-1">
+          <Link href="/dashboard" className="flex flex-1 flex-col items-center justify-center gap-0.5 text-xs text-muted-foreground">
+            <span className="text-base" aria-hidden>
+              🏠
+            </span>
+            Home
+          </Link>
+          <Link href="/practice" className="flex flex-1 flex-col items-center justify-center gap-0.5 text-xs text-muted-foreground">
+            <span className="text-base" aria-hidden>
+              📝
+            </span>
+            Practice
+          </Link>
+          <Link href="/notes" className="flex flex-1 flex-col items-center justify-center gap-0.5 text-xs text-muted-foreground">
+            <span className="text-base" aria-hidden>
+              📖
+            </span>
+            Notes
+          </Link>
+          <Link href="/flashcards" className="flex flex-1 flex-col items-center justify-center gap-0.5 text-xs text-muted-foreground">
+            <span className="text-base" aria-hidden>
+              🃏
+            </span>
+            Cards
+          </Link>
+          <Link href="/profile" className="flex flex-1 flex-col items-center justify-center gap-0.5 text-xs text-muted-foreground">
+            <span className="text-base" aria-hidden>
+              👤
+            </span>
+            Profile
+          </Link>
         </div>
       </div>
     </nav>

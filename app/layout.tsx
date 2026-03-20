@@ -14,11 +14,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-        <body className="min-h-screen antialiased bg-background text-foreground">
+      <body className="min-h-screen antialiased bg-background text-foreground pb-24 md:pb-0">
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           {children}
-        </body>
-      </ThemeProvider>
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

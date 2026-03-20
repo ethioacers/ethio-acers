@@ -156,7 +156,7 @@ export default function ProfilePage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen p-4 sm:p-6">
+      <main className="min-h-screen p-3 sm:p-6">
         <div className="mx-auto max-w-lg space-y-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h1 className="text-2xl font-bold">Profile</h1>
@@ -174,7 +174,7 @@ export default function ProfilePage() {
             </div>
           )}
 
-          <form onSubmit={handleSave} className="space-y-6 rounded-lg border bg-card p-6 shadow-sm">
+          <form onSubmit={handleSave} className="space-y-6 rounded-lg border bg-card p-3 sm:p-6 shadow-sm">
             <div className="space-y-2">
               <Label htmlFor="fullName">Full name</Label>
               <Input

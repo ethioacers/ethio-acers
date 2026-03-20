@@ -435,7 +435,7 @@ export default function PracticePage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen p-4 sm:p-6">
+      <main className="min-h-screen p-3 sm:p-6">
         <div className="mx-auto max-w-2xl space-y-6">
           <div className="flex items-center justify-between">
             <Link href="/dashboard" className="text-sm text-muted-foreground hover:underline">
@@ -444,7 +444,7 @@ export default function PracticePage() {
           </div>
 
           {questions.length === 0 ? (
-            <div className="rounded-lg border bg-card p-6 shadow-sm space-y-4">
+            <div className="rounded-lg border bg-card p-3 sm:p-6 shadow-sm space-y-4">
               <h1 className="text-xl font-bold">Practice</h1>
 
               {initError && (
@@ -475,11 +475,11 @@ export default function PracticePage() {
                     className="bg-gold text-black hover:bg-gold/90"
                   >
                     <a
-                      href="https://wa.me/0000000000"
+                      href="https://t.me/YourTelegramHandle"
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      Contact on WhatsApp
+                      Contact on Telegram
                     </a>
                   </Button>
                 </div>
