@@ -42,17 +42,17 @@ function LoginForm() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-6">
-      <div className="w-full max-w-sm sm:max-w-md space-y-6 rounded-lg border bg-card p-4 sm:p-6 shadow-sm">
+    <main className="flex min-h-screen flex-col items-center justify-center p-6">
+      <div className="w-full max-w-md space-y-6 rounded-2xl border border-border/70 bg-card/90 p-8 shadow-lg">
         <div className="space-y-2 text-center">
-          <h1 className="text-2xl sm:text-3xl font-bold">Ethio Acers</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">
+          <h1 className="text-3xl font-extrabold tracking-tight text-gold">Ethioacers</h1>
+          <p className="text-sm text-muted-foreground">
             Log in with your test account
           </p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-base sm:text-lg">Email</Label>
+            <Label htmlFor="email" className="text-sm font-semibold">Email</Label>
             <Input
               id="email"
               type="email"
@@ -61,11 +61,11 @@ function LoginForm() {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
-              className="w-full sm:w-full px-4 py-3 sm:py-4 text-base sm:text-lg"
+              className="w-full"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-base sm:text-lg">Password</Label>
+            <Label htmlFor="password" className="text-sm font-semibold">Password</Label>
             <Input
               id="password"
               type="password"
@@ -73,22 +73,20 @@ function LoginForm() {
               onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="current-password"
-              className="w-full sm:w-full px-4 py-3 sm:py-4 text-base sm:text-lg"
+              className="w-full"
             />
           </div>
-          {error && (
-            <p className="text-sm sm:text-base text-destructive">{error}</p>
-          )}
-          <Button type="submit" className="w-full sm:w-full py-3 sm:py-4 text-base sm:text-lg" disabled={loading}>
+          {error && <p className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
+          <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Signing in…" : "Log in"}
           </Button>
         </form>
-        <p className="text-center text-sm sm:text-base">
+        <p className="text-center text-sm">
           <Link href="/signup" className="text-primary hover:underline">
             Don&apos;t have an account? Sign up
           </Link>
         </p>
-        <p className="text-center text-sm sm:text-base">
+        <p className="text-center text-sm">
           <Link href="/" className="text-primary hover:underline">
             ← Back home
           </Link>

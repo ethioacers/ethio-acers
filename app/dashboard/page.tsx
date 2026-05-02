@@ -20,6 +20,15 @@ type SessionRow = {
   subjects?: { name: string } | null;
 };
 
+type WeeklyExamSummary = {
+  id: number;
+  title: string;
+  week_end: string;
+  attemptScore?: number | null;
+  attemptTotal?: number | null;
+  attemptsToday?: number;
+};
+
 export default function DashboardPage() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
@@ -32,6 +41,7 @@ export default function DashboardPage() {
   const [correctAttempts, setCorrectAttempts] = useState(0);
   const [totalSessions, setTotalSessions] = useState(0);
   const [recentSessions, setRecentSessions] = useState<SessionRow[]>([]);
+  const [weeklyExam, setWeeklyExam] = useState<WeeklyExamSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [usage, setUsage] = useState<UsageResult | null>(null);
@@ -118,6 +128,45 @@ export default function DashboardPage() {
           setLoadError(sessionsErr.message);
         }
         setRecentSessions((sessions as unknown as SessionRow[]) ?? []);
+
+        const today = new Date().toISOString().split("T")[0];
+        const { data: activeWeekly } = await supabase
+          .from("weekly_exams")
+          .select("id, title, week_end")
+          .eq("is_active", true)
+          .lte("week_start", today)
+          .gte("week_end", today)
+          .order("week_start", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (activeWeekly) {
+          const todayStartIso = new Date(new Date().toISOString().split("T")[0]).toISOString();
+          const { data: attemptRow } = await supabase
+            .from("weekly_exam_attempts")
+            .select("score, total")
+            .eq("user_id", user.id)
+            .eq("weekly_exam_id", (activeWeekly as any).id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          const { count: attemptsToday } = await supabase
+            .from("weekly_exam_attempts")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", user.id)
+            .eq("weekly_exam_id", (activeWeekly as any).id)
+            .gte("created_at", todayStartIso);
+          setWeeklyExam({
+            id: (activeWeekly as any).id,
+            title: (activeWeekly as any).title,
+            week_end: (activeWeekly as any).week_end,
+            attemptScore: (attemptRow as any)?.score ?? null,
+            attemptTotal: (attemptRow as any)?.total ?? null,
+            attemptsToday: attemptsToday ?? 0,
+          });
+        } else {
+          setWeeklyExam(null);
+        }
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         setLoadError(msg || "Something went wrong while loading the dashboard.");
@@ -145,8 +194,8 @@ export default function DashboardPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen p-4 sm:p-6">
-        <div className="mx-auto max-w-2xl space-y-6">
+      <main className="min-h-screen p-6">
+        <div className="mx-auto max-w-3xl space-y-8">
           {loadError && (
             <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 sm:p-4 text-sm text-destructive">
               {loadError}
@@ -165,7 +214,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Streak card */}
-          <div className="rounded-lg border border-muted bg-card p-4 sm:p-6 shadow-sm space-y-4">
+          <div className="space-y-4 rounded-2xl border border-border/70 bg-card/90 p-6 shadow-lg">
             <div className="flex items-center gap-2">
               <span className="hidden md:inline text-3xl" role="img" aria-label="flame">
                 🔥
@@ -178,19 +227,19 @@ export default function DashboardPage() {
 
           {/* Stats row */}
           <div className="grid gap-4 grid-cols-2 md:grid-cols-3">
-            <div className="rounded-lg border border-muted bg-card p-4 shadow-sm h-full">
+            <div className="h-full rounded-2xl border border-border/70 bg-card/90 p-5 shadow-sm">
               <p className="text-xs font-medium text-muted-foreground">
                 Questions answered
               </p>
               <p className="text-lg sm:text-2xl font-bold text-gold">{totalAttempts}</p>
             </div>
-            <div className="rounded-lg border border-muted bg-card p-4 shadow-sm h-full">
+            <div className="h-full rounded-2xl border border-border/70 bg-card/90 p-5 shadow-sm">
               <p className="text-xs font-medium text-muted-foreground">
                 Accuracy
               </p>
               <p className="text-lg sm:text-2xl font-bold text-gold">{accuracy}%</p>
             </div>
-            <div className="rounded-lg border border-muted bg-card p-4 shadow-sm h-full col-span-2 md:col-span-1">
+            <div className="col-span-2 h-full rounded-2xl border border-border/70 bg-card/90 p-5 shadow-sm md:col-span-1">
               <p className="text-xs font-medium text-muted-foreground">
                 Sessions completed
               </p>
@@ -271,7 +320,7 @@ export default function DashboardPage() {
           {usage && (
             <>
               {/* Desktop usage unchanged */}
-              <div className="hidden md:block rounded-lg border border-muted bg-card p-4 shadow-sm">
+              <div className="hidden rounded-2xl border border-border/70 bg-card/90 p-5 shadow-sm md:block">
                 {usage.isPro ? (
                   <p className="text-sm font-medium text-gold">
                     ✨ Pro — Unlimited Access
@@ -292,7 +341,7 @@ export default function DashboardPage() {
               </div>
 
               {/* Mobile compact usage */}
-              <div className="md:hidden rounded-lg border border-muted bg-card p-4 shadow-sm space-y-3">
+              <div className="space-y-3 rounded-2xl border border-border/70 bg-card/90 p-5 shadow-sm md:hidden">
                 {usage.isPro ? (
                   <p className="text-sm font-medium text-gold">Pro — Unlimited Access</p>
                 ) : (
@@ -345,6 +394,41 @@ export default function DashboardPage() {
             </>
           )}
 
+          {weeklyExam && (
+            <div className="rounded-2xl border border-yellow-500/70 bg-card/95 p-6 shadow-lg shadow-yellow-500/10">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gold">Priority: Weekly Exam</p>
+                  <p className="font-semibold text-gold text-lg">{weeklyExam.title}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    1 exam per day throughout the week · up to 3 attempts each day
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Deadline:{" "}
+                    {new Date(weeklyExam.week_end).toLocaleDateString(undefined, {
+                      dateStyle: "medium",
+                    })}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full border border-yellow-500/60 px-3 py-1 text-xs font-semibold text-gold">
+                    {weeklyExam.attemptsToday ?? 0}/3 today
+                  </span>
+                  {weeklyExam.attemptScore != null && weeklyExam.attemptTotal != null && (
+                    <span className="rounded-full border border-yellow-500/60 px-3 py-1 text-xs font-semibold text-gold">
+                      Last: {weeklyExam.attemptScore}/{weeklyExam.attemptTotal}
+                    </span>
+                  )}
+                  <Button asChild className="bg-gold text-black hover:bg-gold/90">
+                    <Link href="/weekly-exam">
+                      {(weeklyExam.attemptsToday ?? 0) >= 3 ? "View Weekly Exam →" : "Take Weekly Exam →"}
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Features overview */}
           {usage && !usage.isPro && (
             <div className="md:hidden">
@@ -366,7 +450,7 @@ export default function DashboardPage() {
               <span className="hidden md:inline">🎓</span>
             </h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="rounded-xl border border-yellow-500/60 bg-card/80 p-4 shadow-lg shadow-yellow-500/10">
+              <div className="rounded-2xl border border-yellow-500/50 bg-card/90 p-5 shadow-md">
                 <div className="hidden md:block text-3xl mb-2">🤖</div>
                 <h3 className="font-semibold mb-1">AI-Powered Explanations</h3>
                 <p className="text-sm text-muted-foreground">
@@ -375,7 +459,7 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div className="rounded-xl border border-yellow-500/60 bg-card/80 p-4 shadow-lg shadow-yellow-500/10">
+              <div className="rounded-2xl border border-yellow-500/50 bg-card/90 p-5 shadow-md">
                 <div className="hidden md:block text-3xl mb-2">📝</div>
                 <h3 className="font-semibold mb-1">Past Exam Questions</h3>
                 <p className="text-sm text-muted-foreground">
@@ -384,7 +468,7 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div className="rounded-xl border border-yellow-500/60 bg-card/80 p-4 shadow-lg shadow-yellow-500/10">
+              <div className="rounded-2xl border border-yellow-500/50 bg-card/90 p-5 shadow-md">
                 <div className="hidden md:block text-3xl mb-2">📖</div>
                 <h3 className="font-semibold mb-1">Study Notes &amp; AI Summaries</h3>
                 <p className="text-sm text-muted-foreground">
@@ -392,7 +476,7 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div className="rounded-xl border border-yellow-500/60 bg-card/80 p-4 shadow-lg shadow-yellow-500/10">
+              <div className="rounded-2xl border border-yellow-500/50 bg-card/90 p-5 shadow-md">
                 <div className="hidden md:block text-3xl mb-2">🔥</div>
                 <h3 className="font-semibold mb-1">Daily Streak Tracking</h3>
                 <p className="text-sm text-muted-foreground">
@@ -400,7 +484,7 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div className="rounded-xl border border-yellow-500/60 bg-card/80 p-4 shadow-lg shadow-yellow-500/10">
+              <div className="rounded-2xl border border-yellow-500/50 bg-card/90 p-5 shadow-md">
                 <div className="hidden md:block text-3xl mb-2">📊</div>
                 <h3 className="font-semibold mb-1">Timed Full Exams</h3>
                 <p className="text-sm text-muted-foreground">
@@ -409,7 +493,7 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div className="rounded-xl border border-yellow-500/60 bg-card/80 p-4 shadow-lg shadow-yellow-500/10">
+              <div className="rounded-2xl border border-yellow-500/50 bg-card/90 p-5 shadow-md">
                 <div className="hidden md:block text-3xl mb-2">🎯</div>
                 <h3 className="font-semibold mb-1">Track Your Progress</h3>
                 <p className="text-sm text-muted-foreground">
@@ -421,7 +505,7 @@ export default function DashboardPage() {
           </section>
 
           {/* Recent sessions */}
-          <div className="rounded-lg border border-muted bg-card p-4 sm:p-6 shadow-sm">
+          <div className="rounded-2xl border border-border/70 bg-card/90 p-6 shadow-lg">
             <h2 className="font-semibold mb-4">Recent sessions</h2>
             {recentSessions.length === 0 ? (
               <p className="text-sm text-muted-foreground">

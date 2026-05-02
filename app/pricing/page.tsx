@@ -99,10 +99,10 @@ export default function PricingPage() {
   }
 
   return (
-    <main className="min-h-screen p-4 sm:p-6 pb-12">
+    <main className="min-h-screen p-6 pb-12">
       <div className="mx-auto max-w-3xl space-y-6">
         {/* Free trial banner */}
-        <div className="rounded-xl border border-yellow-500/60 bg-card p-4 shadow-sm">
+        <div className="rounded-2xl border border-yellow-500/60 bg-card/95 p-5 shadow-lg shadow-yellow-500/10">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm sm:text-base font-semibold text-gold">
               🎉 Try Pro FREE for 2 weeks! Contact us to activate your free trial.
@@ -129,7 +129,7 @@ export default function PricingPage() {
               <div
                 key={plan.key}
                 className={[
-                  "rounded-xl border bg-card p-5 shadow-sm",
+                  "rounded-2xl border bg-card/95 p-6 shadow-md",
                   plan.recommended
                     ? "border-yellow-500/70 shadow-[0_0_0_1px_rgba(250,204,21,0.15),0_0_30px_rgba(250,204,21,0.25)] scale-[1.01]"
                     : "border-muted",
@@ -184,7 +184,7 @@ export default function PricingPage() {
         {/* Upgrade steps */}
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">How to Upgrade</h2>
-          <div className="rounded-xl border border-muted bg-card p-5 shadow-sm">
+          <div className="rounded-2xl border border-border/70 bg-card/95 p-6 shadow-lg">
             <ol className="space-y-3 text-sm">
               <li>
                 <p className="font-semibold">Choose your plan above</p>
@@ -219,7 +219,7 @@ export default function PricingPage() {
             if (e.target === e.currentTarget) closeModal();
           }}
         >
-          <div className="w-full max-w-lg rounded-xl border border-yellow-500/50 bg-card shadow-xl">
+          <div className="w-full max-w-lg rounded-2xl border border-yellow-500/50 bg-card shadow-xl">
             <div className="flex items-start justify-between gap-4 border-b border-muted/60 p-4">
               <div>
                 <h2 className="text-lg font-bold text-gold">How to Activate Pro</h2>

@@ -27,9 +27,9 @@ export function ExamScoreBreakdown({ score, total, wrongEntries, onBack }: Props
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border bg-card p-6 shadow-sm space-y-2">
-        <h2 className="text-xl font-bold">Exam complete</h2>
-        <p className="text-3xl font-bold">
+      <div className="space-y-2 rounded-2xl border border-border/70 bg-card/90 p-8 shadow-lg">
+        <h2 className="text-2xl font-bold tracking-tight">Exam complete</h2>
+        <p className="text-4xl font-extrabold tracking-tight text-gold">
           {score} / {total}
         </p>
         <p className="text-muted-foreground">{pct}% correct</p>
@@ -39,11 +39,11 @@ export function ExamScoreBreakdown({ score, total, wrongEntries, onBack }: Props
       </div>
 
       {wrongEntries.length > 0 && (
-        <div className="rounded-lg border bg-card p-6 shadow-sm space-y-4">
+        <div className="space-y-4 rounded-2xl border border-border/70 bg-card/90 p-6 shadow-lg">
           <h3 className="font-semibold">Questions you got wrong</h3>
           <div className="space-y-6">
             {wrongEntries.map(({ index, question, selectedAnswer }) => (
-              <div key={question.id} className="rounded-md border p-4 space-y-2">
+              <div key={question.id} className="space-y-2 rounded-xl border border-border/70 bg-background/20 p-4">
                 <p className="text-xs font-medium text-muted-foreground">
                   Question {index + 1}
                 </p>

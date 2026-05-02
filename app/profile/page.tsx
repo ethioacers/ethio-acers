@@ -175,7 +175,7 @@ export default function ProfilePage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen p-4 sm:p-6">
+      <main className="min-h-screen p-6">
         <div className="mx-auto max-w-lg space-y-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h1 className="text-2xl font-bold">Profile</h1>
@@ -194,7 +194,7 @@ export default function ProfilePage() {
           )}
 
           {/* Mobile-only: logout + theme toggle */}
-          <div className="rounded-lg border border-muted bg-card p-4 shadow-sm md:hidden">
+          <div className="rounded-2xl border border-border/70 bg-card/90 p-5 shadow-sm md:hidden">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <ThemeToggle />
@@ -207,7 +207,7 @@ export default function ProfilePage() {
             {logoutError && <p className="mt-2 text-xs text-destructive">{logoutError}</p>}
           </div>
 
-          <form onSubmit={handleSave} className="space-y-6 rounded-lg border bg-card p-4 sm:p-6 shadow-sm">
+          <form onSubmit={handleSave} className="space-y-6 rounded-2xl border border-border/70 bg-card/90 p-6 shadow-lg">
             <div className="space-y-2">
               <Label htmlFor="fullName">Full name</Label>
               <Input
@@ -234,7 +234,7 @@ export default function ProfilePage() {
               <Label htmlFor="grade">Grade</Label>
               <select
                 id="grade"
-                className="select-theme h-10 w-full rounded-md border border-input bg-muted/80 px-3 py-2 text-sm text-foreground"
+                className="select-theme h-11 w-full rounded-xl border border-input bg-background/90 px-4 py-2.5 text-sm text-foreground shadow-sm"
                 value={grade}
                 onChange={(e) => setGrade(e.target.value ? Number(e.target.value) : "")}
               >

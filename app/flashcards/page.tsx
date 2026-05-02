@@ -349,8 +349,8 @@ export default function FlashcardsPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-background p-4 sm:p-6">
-        <div className="mx-auto flex max-w-2xl flex-col gap-6">
+      <main className="min-h-screen bg-background p-6">
+        <div className="mx-auto flex max-w-3xl flex-col gap-8">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gold">Flashcards</h1>
           </div>
@@ -362,7 +362,7 @@ export default function FlashcardsPage() {
           )}
 
           {phase === "select" && (
-            <section className="space-y-4 rounded-lg border border-muted bg-card/80 p-4 sm:p-6 shadow-sm">
+            <section className="space-y-5 rounded-2xl border border-border/70 bg-card/90 p-6 shadow-lg">
               <h2 className="font-semibold">Select subject and topic</h2>
 
               {usageLocked && (
@@ -399,7 +399,7 @@ export default function FlashcardsPage() {
                   <Label htmlFor="subject">Subject</Label>
                   <select
                     id="subject"
-                    className="select-theme h-10 w-full rounded-md border border-input bg-muted/80 px-3 py-2 text-sm text-foreground"
+                    className="select-theme h-11 w-full rounded-xl border border-input bg-background/90 px-4 py-2.5 text-sm text-foreground shadow-sm"
                     value={selectedSubject}
                     onChange={(e) => setSelectedSubject(e.target.value)}
                   >
@@ -415,7 +415,7 @@ export default function FlashcardsPage() {
                   <Label htmlFor="grade">Grade</Label>
                   <select
                     id="grade"
-                    className="select-theme h-10 w-full rounded-md border border-input bg-muted/80 px-3 py-2 text-sm text-foreground"
+                    className="select-theme h-11 w-full rounded-xl border border-input bg-background/90 px-4 py-2.5 text-sm text-foreground shadow-sm"
                     value={selectedGrade}
                     onChange={(e) =>
                       setSelectedGrade(
@@ -437,7 +437,7 @@ export default function FlashcardsPage() {
                 <Label htmlFor="chapter">Chapter</Label>
                 <select
                   id="chapter"
-                  className="select-theme h-10 w-full rounded-md border border-input bg-muted/80 px-3 py-2 text-sm text-foreground"
+                  className="select-theme h-11 w-full rounded-xl border border-input bg-background/90 px-4 py-2.5 text-sm text-foreground shadow-sm"
                   value={selectedChapter}
                   onChange={(e) => setSelectedChapter(e.target.value)}
                 >
@@ -624,7 +624,7 @@ export default function FlashcardsPage() {
           )}
 
           {phase === "results" && (
-            <section className="space-y-4 rounded-lg border border-muted bg-card/80 p-4 sm:p-6 shadow-sm">
+            <section className="space-y-4 rounded-2xl border border-border/70 bg-card/90 p-6 shadow-lg">
               <h2 className="text-lg font-semibold">Session complete</h2>
               <p className="text-sm text-muted-foreground">
                 Known:{" "}

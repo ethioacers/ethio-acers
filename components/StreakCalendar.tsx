@@ -21,8 +21,8 @@ export function StreakCalendar({ sessionDates }: Props) {
   const set = new Set(sessionDates);
 
   return (
-    <div className="flex flex-col gap-1">
-      <p className="text-xs font-medium text-muted-foreground">
+    <div className="flex flex-col gap-2">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         Last 7 days
       </p>
       <div className="flex gap-2">
@@ -40,8 +40,8 @@ export function StreakCalendar({ sessionDates }: Props) {
                 {dayLabel}
               </span>
               <div
-                className={`h-8 w-8 rounded-md ${
-                  done ? "bg-green-500" : "bg-muted"
+                className={`h-8 w-8 rounded-lg border ${
+                  done ? "border-emerald-400/60 bg-emerald-500/80 shadow-sm" : "border-border bg-muted/80"
                 }`}
                 aria-label={done ? "Done" : "Missed"}
               />

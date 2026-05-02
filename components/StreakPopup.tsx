@@ -28,7 +28,7 @@
    }, [onClose]);
 
    return (
-     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+     <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60">
        <div className="w-full max-w-sm rounded-xl border border-gold bg-card p-6 shadow-xl animate-in fade-in-0 zoom-in-95 duration-300">
          <div className="flex flex-col items-center gap-3 text-center">
            <div className="text-5xl" aria-hidden>

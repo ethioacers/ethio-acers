@@ -120,3 +120,64 @@ alter table public.profiles add column if not exists usage_last_reset date defau
 
 -- Profile: school name (run in Supabase SQL Editor)
 alter table public.profiles add column if not exists school_name text;
+
+-- Weekly exams
+create table if not exists weekly_exams (
+  id bigserial primary key,
+  title text not null,
+  description text,
+  subject_id int references subjects,
+  grade int check (grade between 9 and 12),
+  duration_minutes int not null default 60 check (duration_minutes > 0),
+  week_start date not null,
+  week_end date not null,
+  is_active boolean not null default false,
+  created_at timestamptz default now()
+);
+
+create table if not exists weekly_exam_questions (
+  id bigserial primary key,
+  weekly_exam_id bigint not null references weekly_exams on delete cascade,
+  question_id int not null references questions on delete cascade,
+  question_order int not null default 1,
+  created_at timestamptz default now(),
+  unique (weekly_exam_id, question_id)
+);
+
+create table if not exists weekly_exam_attempts (
+  id uuid primary key default gen_random_uuid(),
+  weekly_exam_id bigint not null references weekly_exams on delete cascade,
+  user_id uuid not null references public.profiles on delete cascade,
+  score int not null default 0,
+  total int not null default 0,
+  time_taken_seconds int not null default 0,
+  answers_json text,
+  created_at timestamptz default now()
+);
+
+create index if not exists weekly_exams_active_idx on weekly_exams (is_active, week_start, week_end);
+create index if not exists weekly_exam_questions_exam_idx on weekly_exam_questions (weekly_exam_id, question_order);
+create index if not exists weekly_exam_attempts_user_exam_idx on weekly_exam_attempts (user_id, weekly_exam_id);
+
+alter table weekly_exams enable row level security;
+alter table weekly_exam_questions enable row level security;
+alter table weekly_exam_attempts enable row level security;
+
+drop policy if exists "Authenticated read weekly exams" on weekly_exams;
+create policy "Authenticated read weekly exams" on weekly_exams
+  for select using (auth.role() = 'authenticated');
+
+drop policy if exists "Authenticated read weekly exam questions" on weekly_exam_questions;
+create policy "Authenticated read weekly exam questions" on weekly_exam_questions
+  for select using (auth.role() = 'authenticated');
+
+drop policy if exists "Own weekly attempts" on weekly_exam_attempts;
+create policy "Own weekly attempts" on weekly_exam_attempts
+  for all using (auth.uid() = user_id);
+
+-- Notes: optional unit label (e.g. "Unit 1 - Kinematics") for grouping in the app
+alter table public.notes add column if not exists unit text;
+
+-- Example insert (run in SQL editor as needed):
+-- insert into notes (subject_id, grade, topic, unit, content, is_ai_generated)
+-- values (1, 12, 'Note title', 'Unit 1 - Kinematics', 'content here', false);

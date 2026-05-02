@@ -2,58 +2,86 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
 @layer base {
   :root {
     /* Light theme */
-    --background: 0 0% 100%;
-    --foreground: 0 0% 10%;
-    --primary: 142 76% 42%;
+    --background: 210 33% 98%;
+    --foreground: 223 22% 16%;
+    --primary: 168 53% 34%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 0 0% 10%;
-    --muted: 220 14% 94%;
-    --muted-foreground: 220 10% 40%;
-    --accent: 220 14% 96%;
-    --accent-foreground: 0 0% 10%;
+    --secondary: 210 28% 94%;
+    --secondary-foreground: 223 22% 16%;
+    --muted: 210 20% 92%;
+    --muted-foreground: 220 12% 42%;
+    --accent: 168 30% 93%;
+    --accent-foreground: 223 22% 16%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --input: 220 14% 90%;
-    --ring: 142 76% 42%;
-    --gold: 43 96% 56%;
-    --radius: 0.5rem;
+    --input: 210 20% 84%;
+    --ring: 168 53% 34%;
+    --gold: 41 88% 56%;
+    --radius: 0.75rem;
   }
 
   html.dark {
-    /* Dark theme + green (existing look) */
-    --background: 0 0% 6%;
-    --foreground: 0 0% 94%;
-    --primary: 142 76% 42%;
+    --background: 224 28% 10%;
+    --foreground: 210 24% 94%;
+    --primary: 167 54% 48%;
     --primary-foreground: 0 0% 6%;
-    --secondary: 220 14% 18%;
-    --secondary-foreground: 0 0% 94%;
-    --muted: 220 14% 14%;
-    --muted-foreground: 220 10% 60%;
-    --accent: 220 14% 18%;
-    --accent-foreground: 0 0% 94%;
+    --secondary: 224 18% 16%;
+    --secondary-foreground: 210 24% 94%;
+    --muted: 223 17% 14%;
+    --muted-foreground: 215 16% 66%;
+    --accent: 223 20% 18%;
+    --accent-foreground: 210 24% 94%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --input: 220 14% 18%;
-    --ring: 142 76% 42%;
-    --gold: 43 96% 56%;
-    --radius: 0.5rem;
+    --input: 223 20% 22%;
+    --ring: 167 54% 48%;
+    --gold: 41 88% 56%;
+    --radius: 0.75rem;
   }
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: system-ui, -apple-system, sans-serif;
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--background));
+  background-image:
+    radial-gradient(ellipse 100% 70% at 50% -25%, hsl(var(--primary) / 0.14), transparent 55%),
+    radial-gradient(ellipse 80% 50% at 100% 20%, hsl(var(--gold) / 0.08), transparent 45%),
+    radial-gradient(ellipse 60% 40% at 0% 80%, hsl(var(--primary) / 0.06), transparent 40%);
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+html.dark body {
+  background-image:
+    radial-gradient(ellipse 100% 60% at 50% -20%, hsl(var(--primary) / 0.22), transparent 50%),
+    radial-gradient(ellipse 70% 50% at 90% 10%, hsl(var(--gold) / 0.06), transparent 42%),
+    radial-gradient(ellipse 50% 35% at 5% 90%, hsl(var(--primary) / 0.08), transparent 38%);
+}
+
+@layer base {
+  h1 {
+    @apply text-3xl font-extrabold tracking-tight sm:text-4xl;
+  }
+  h2 {
+    @apply text-2xl font-bold tracking-tight;
+  }
+  h3 {
+    @apply text-xl font-semibold;
+  }
+  p {
+    @apply leading-relaxed;
+  }
 }
 
 /* Select: dark background, green-tinted border, light chevron */
 .select-theme {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a3e635' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 0.75rem center;
   padding-right: 2rem;

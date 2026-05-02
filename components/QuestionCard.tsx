@@ -62,25 +62,25 @@ export function QuestionCard({
   const showFeedback = showResult && !examMode;
 
   return (
-    <div className="rounded-lg border bg-card p-4 sm:p-6 shadow-sm space-y-6">
+    <div className="space-y-6 rounded-2xl border border-border/70 bg-card/90 p-6 shadow-lg">
       <p className="text-sm text-muted-foreground">
         Question {questionNumber} of {total}
       </p>
-      <p className="text-base sm:text-lg font-medium">
+      <p className="text-base font-medium sm:text-lg">
         <LatexRenderer text={question.question_text} />
       </p>
       <div className="space-y-2">
         {options.map(({ key, text }) => {
           const chosen = selectedAnswer === key;
           const correct = question.correct_answer === key;
-          let style = "border border-input bg-background text-foreground hover:border-primary";
+          let style = "border border-input bg-background/90 text-foreground hover:border-primary/60";
           if (showFeedback) {
             if (correct) style = "border-green-500 bg-green-500/10 text-foreground";
             else if (chosen && !correct) style = "border-red-500 bg-red-500/10 text-foreground";
           } else if (examMode && chosen) {
-            style = "border-primary bg-primary/10 text-foreground";
+            style = "border-primary bg-primary/10 text-foreground shadow-sm";
           } else if (!examMode && chosen) {
-            style = "border-primary bg-muted text-foreground";
+            style = "border-primary bg-accent/70 text-foreground";
           }
           return (
             <button
@@ -88,7 +88,7 @@ export function QuestionCard({
               type="button"
               disabled={showFeedback}
               onClick={() => onSelect(key)}
-              className={`w-full rounded-md px-4 py-3 min-h-[44px] text-left text-sm sm:text-base transition-colors ${style}`}
+              className={`min-h-[44px] w-full rounded-xl px-4 py-3 text-left text-sm transition-colors sm:text-base ${style}`}
             >
               <span className="font-medium">{key}.</span> <LatexRenderer text={text ?? ""} />
             </button>
@@ -96,7 +96,7 @@ export function QuestionCard({
         })}
       </div>
       {showFeedback && (
-        <div className="rounded-md border p-3 space-y-1">
+        <div className="space-y-2 rounded-xl border border-border/70 bg-background/30 p-4">
           <p className="text-sm font-medium">
             {isCorrect ? (
               <span className="text-green-600">✅ Correct</span>
@@ -159,7 +159,7 @@ export function QuestionCard({
                 )}
               </Button>
               {aiExplanation && (
-                <div className="rounded-md border border-primary/20 bg-primary/5 p-3">
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
                   <p className="text-xs font-medium text-muted-foreground mb-1">AI tutor</p>
                   <p className="text-sm">
                     <LatexRenderer text={aiExplanation} />

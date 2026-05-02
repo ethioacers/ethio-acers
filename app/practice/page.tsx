@@ -435,8 +435,8 @@ export default function PracticePage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen p-4 sm:p-6">
-        <div className="mx-auto max-w-2xl space-y-6">
+      <main className="min-h-screen p-6">
+        <div className="mx-auto max-w-3xl space-y-8">
           <div className="flex items-center justify-between">
             <Link href="/dashboard" className="text-sm text-muted-foreground hover:underline">
               ← Dashboard
@@ -444,7 +444,7 @@ export default function PracticePage() {
           </div>
 
           {questions.length === 0 ? (
-            <div className="rounded-lg border bg-card p-4 sm:p-6 shadow-sm space-y-4">
+            <div className="space-y-5 rounded-2xl border border-border/70 bg-card/90 p-6 shadow-lg">
               <h1 className="text-xl font-bold">Practice</h1>
 
               {initError && (
@@ -459,7 +459,7 @@ export default function PracticePage() {
               )}
 
               {usageLocked && (
-                <div className="rounded-lg border border-yellow-500/60 bg-card/80 p-4 shadow-sm space-y-2">
+                <div className="space-y-2 rounded-xl border border-yellow-500/60 bg-card/80 p-5 shadow-sm">
                   <div className="text-3xl text-gold" aria-hidden>
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
                       <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
@@ -494,7 +494,7 @@ export default function PracticePage() {
                 <button
                   type="button"
                   onClick={() => setMode("practice")}
-                  className={`flex flex-col items-center rounded-lg border-2 px-4 py-3 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                  className={`flex flex-col items-center rounded-xl border px-4 py-3 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
                     mode === "practice"
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-input bg-background text-foreground hover:border-primary hover:bg-primary/5"
@@ -508,7 +508,7 @@ export default function PracticePage() {
                 <button
                   type="button"
                   onClick={() => setMode("exam")}
-                  className={`flex flex-col items-center rounded-lg border-2 px-4 py-3 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                  className={`flex flex-col items-center rounded-xl border px-4 py-3 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
                     mode === "exam"
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-input bg-background text-foreground hover:border-primary hover:bg-primary/5"
@@ -522,7 +522,7 @@ export default function PracticePage() {
                 <button
                   type="button"
                   onClick={() => setMode("learn")}
-                  className={`flex flex-col items-center rounded-lg border-2 px-4 py-3 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                  className={`flex flex-col items-center rounded-xl border px-4 py-3 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
                     mode === "learn"
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-input bg-background text-foreground hover:border-primary hover:bg-primary/5"
@@ -540,7 +540,7 @@ export default function PracticePage() {
                 <label className="text-sm font-medium">Subject & grade</label>
                 <div className="grid gap-3 sm:grid-cols-2">
                 <select
-                  className="select-theme h-11 w-full rounded-lg border-2 border-border bg-muted/80 pl-3 pr-10 py-2 text-sm text-foreground transition-colors hover:border-primary/50 hover:bg-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="select-theme h-11 w-full rounded-xl border border-input bg-background/90 px-4 py-2.5 text-sm text-foreground shadow-sm transition-colors hover:border-primary/50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                   value={subjectName}
                   onChange={(e) => setSubjectName(e.target.value)}
                 >
@@ -554,7 +554,7 @@ export default function PracticePage() {
                     ))}
                 </select>
                 <select
-                  className="select-theme h-11 w-full rounded-lg border-2 border-border bg-muted/80 pl-3 pr-10 py-2 text-sm text-foreground transition-colors hover:border-primary/50 hover:bg-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="select-theme h-11 w-full rounded-xl border border-input bg-background/90 px-4 py-2.5 text-sm text-foreground shadow-sm transition-colors hover:border-primary/50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                   value={grade}
                   onChange={(e) => setGrade(e.target.value ? Number(e.target.value) : "")}
                 >
@@ -572,7 +572,7 @@ export default function PracticePage() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Past exam year</label>
                   <select
-                    className="select-theme h-11 w-full rounded-lg border-2 border-border bg-muted/80 pl-3 pr-10 py-2 text-sm text-foreground transition-colors hover:border-primary/50 hover:bg-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 sm:max-w-[12rem]"
+                    className="select-theme h-11 w-full rounded-xl border border-input bg-background/90 px-4 py-2.5 text-sm text-foreground shadow-sm transition-colors hover:border-primary/50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 sm:max-w-[12rem]"
                     value={selectedYear ?? ""}
                     onChange={(e) => setSelectedYear(e.target.value ? Number(e.target.value) : null)}
                   >
@@ -595,7 +595,7 @@ export default function PracticePage() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Chapter</label>
                   <select
-                    className="select-theme h-11 w-full rounded-lg border-2 border-border bg-muted/80 pl-3 pr-10 py-2 text-sm text-foreground transition-colors hover:border-primary/50 hover:bg-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 sm:max-w-[12rem]"
+                    className="select-theme h-11 w-full rounded-xl border border-input bg-background/90 px-4 py-2.5 text-sm text-foreground shadow-sm transition-colors hover:border-primary/50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 sm:max-w-[12rem]"
                     value={selectedChapter ?? ""}
                     onChange={(e) => setSelectedChapter(e.target.value === "" ? null : e.target.value)}
                   >
@@ -654,7 +654,7 @@ export default function PracticePage() {
                 </div>
               )}
               {mode !== "practice" && (
-                <div className="flex flex-col gap-2 rounded-lg border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-3 rounded-2xl border border-border/70 bg-card/90 p-5 sm:flex-row sm:items-center sm:justify-between">
                   <div className="text-sm font-medium">
                     Question {currentIndex + 1} / {questions.length}
                     {selectedYear != null && (

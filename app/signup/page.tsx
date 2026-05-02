@@ -66,17 +66,17 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-6">
-      <div className="w-full max-w-sm sm:max-w-md space-y-6 rounded-lg border bg-card p-4 sm:p-6 shadow-sm">
+    <main className="flex min-h-screen flex-col items-center justify-center p-6">
+      <div className="w-full max-w-md space-y-6 rounded-2xl border border-border/70 bg-card/90 p-8 shadow-lg">
         <div className="space-y-2 text-center">
-          <h1 className="text-2xl sm:text-3xl font-bold">Ethio Acers</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">
+          <h1 className="text-3xl font-extrabold tracking-tight text-gold">Ethioacers</h1>
+          <p className="text-sm text-muted-foreground">
             Create your account
           </p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="fullName" className="text-base sm:text-lg">Full name</Label>
+            <Label htmlFor="fullName" className="text-sm font-semibold">Full name</Label>
             <Input
               id="fullName"
               type="text"
@@ -85,11 +85,11 @@ export default function SignupPage() {
               onChange={(e) => setFullName(e.target.value)}
               required
               autoComplete="name"
-              className="w-full sm:w-full px-4 py-3 sm:py-4 text-base sm:text-lg"
+              className="w-full"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="schoolName" className="text-base sm:text-lg">School name</Label>
+            <Label htmlFor="schoolName" className="text-sm font-semibold">School name</Label>
             <Input
               id="schoolName"
               type="text"
@@ -97,11 +97,11 @@ export default function SignupPage() {
               value={schoolName}
               onChange={(e) => setSchoolName(e.target.value)}
               autoComplete="organization"
-              className="w-full sm:w-full px-4 py-3 sm:py-4 text-base sm:text-lg"
+              className="w-full"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-base sm:text-lg">Email</Label>
+            <Label htmlFor="email" className="text-sm font-semibold">Email</Label>
             <Input
               id="email"
               type="email"
@@ -110,11 +110,11 @@ export default function SignupPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
-              className="w-full sm:w-full px-4 py-3 sm:py-4 text-base sm:text-lg"
+              className="w-full"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-base sm:text-lg">Password</Label>
+            <Label htmlFor="password" className="text-sm font-semibold">Password</Label>
             <Input
               id="password"
               type="password"
@@ -122,14 +122,14 @@ export default function SignupPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="new-password"
-              className="w-full sm:w-full px-4 py-3 sm:py-4 text-base sm:text-lg"
+              className="w-full"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="grade" className="text-base sm:text-lg">Grade</Label>
+            <Label htmlFor="grade" className="text-sm font-semibold">Grade</Label>
             <select
               id="grade"
-              className="select-theme h-12 sm:h-14 w-full rounded-md border border-input bg-background px-3 py-2 sm:py-3 text-base sm:text-lg text-foreground"
+              className="select-theme h-11 w-full rounded-xl border border-input bg-background/90 px-4 py-2.5 text-sm text-foreground shadow-sm"
               value={grade}
               onChange={(e) => setGrade(e.target.value ? Number(e.target.value) : "")}
               required
@@ -142,19 +142,17 @@ export default function SignupPage() {
               ))}
             </select>
           </div>
-          {error && (
-            <p className="text-sm sm:text-base text-destructive">{error}</p>
-          )}
-          <Button type="submit" className="w-full sm:w-full py-3 sm:py-4 text-base sm:text-lg" disabled={loading}>
+          {error && <p className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
+          <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Creating account…" : "Create Account"}
           </Button>
         </form>
-        <p className="text-center text-sm sm:text-base">
+        <p className="text-center text-sm">
           <Link href="/login" className="text-primary hover:underline">
             Already have an account? Log in
           </Link>
         </p>
-        <p className="text-center text-sm sm:text-base">
+        <p className="text-center text-sm">
           <Link href="/" className="text-primary hover:underline">
             ← Back home
           </Link>
