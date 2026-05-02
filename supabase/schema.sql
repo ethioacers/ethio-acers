@@ -56,6 +56,7 @@ create table if not exists questions (
 
 -- If chapter was added later, ensure it exists:
 alter table questions add column if not exists chapter text;
+alter table questions add column if not exists is_weekly_only boolean default false;
 
 -- Example insert format for questions with chapter:
 -- insert into questions (subject_id, grade, question_text, option_a, option_b, option_c, option_d, correct_answer, explanation, year, chapter)

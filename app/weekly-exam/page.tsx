@@ -66,8 +66,10 @@ export default function WeeklyExamPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exams, setExams] = useState<WeeklyExamRow[]>([]);
   const [exam, setExam] = useState<WeeklyExamRow | null>(null);
-  const [questionCount, setQuestionCount] = useState(0);
+  const [questionCounts, setQuestionCounts] = useState<Record<number, number>>({});
+  const [latestAttempts, setLatestAttempts] = useState<Record<number, WeeklyAttemptRow>>({});
   const [attempt, setAttempt] = useState<WeeklyAttemptRow | null>(null);
   const [attemptsToday, setAttemptsToday] = useState(0);
   const [attemptLimit] = useState(3);
@@ -106,67 +108,68 @@ export default function WeeklyExamPage() {
         setUserId(user.id);
 
         const today = new Date().toISOString().split("T")[0];
-        const { data: activeExam, error: examErr } = await supabase
+        const { data: activeExams, error: examErr } = await supabase
           .from("weekly_exams")
           .select("id, title, description, subject_id, grade, duration_minutes, week_start, week_end, is_active, subjects(name)")
           .eq("is_active", true)
           .lte("week_start", today)
-          .gte("week_end", today)
-          .order("week_start", { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          .gte("week_end", today);
 
         if (examErr) {
           setError(examErr.message);
           return;
         }
-        if (!activeExam) {
-          setExam(null);
+        const list = (activeExams as unknown as WeeklyExamRow[]) ?? [];
+        setExams(list);
+        setExam(null);
+        setAttempt(null);
+        setResult(null);
+        setQuestions([]);
+        setAnswers([]);
+        setCurrentIndex(0);
+        setSecondsLeft(null);
+        setExamStartedAt(null);
+        setAttemptsToday(0);
+
+        if (!list || list.length === 0) {
+          setQuestionCounts({});
+          setLatestAttempts({});
           return;
         }
-        setExam(activeExam as unknown as WeeklyExamRow);
 
-        const { count, error: countErr } = await supabase
-          .from("weekly_exam_questions")
-          .select("*", { count: "exact", head: true })
-          .eq("weekly_exam_id", (activeExam as any).id);
-        if (!countErr) {
-          setQuestionCount(count ?? 0);
-        }
-
-        const { data: at, error: atErr } = await supabase
+        // Fetch latest attempts for all active exams (for badge display)
+        const examIds = list.map((e) => e.id);
+        const { data: atRows, error: atErr } = await supabase
           .from("weekly_exam_attempts")
           .select("*")
-          .eq("weekly_exam_id", (activeExam as any).id)
           .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        if (!atErr && at) {
-          setAttempt(at as WeeklyAttemptRow);
-          const score = Number((at as any).score ?? 0);
-          const total = Number((at as any).total ?? 0);
-          const timeTakenSeconds = Number((at as any).time_taken_seconds ?? 0);
-          const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
-          setResult({
-            score,
-            total,
-            percentage,
-            passed: percentage >= 50,
-            timeTakenSeconds,
-          });
+          .in("weekly_exam_id", examIds)
+          .order("created_at", { ascending: false });
+        if (!atErr && atRows) {
+          const map: Record<number, WeeklyAttemptRow> = {};
+          for (const row of atRows as any[]) {
+            const id = Number(row.weekly_exam_id);
+            if (!map[id]) {
+              map[id] = row as WeeklyAttemptRow;
+            }
+          }
+          setLatestAttempts(map);
+        } else {
+          setLatestAttempts({});
         }
 
-        const todayStartIso = new Date(new Date().toISOString().split("T")[0]).toISOString();
-        const { count: todayCount, error: todayCountErr } = await supabase
-          .from("weekly_exam_attempts")
-          .select("*", { count: "exact", head: true })
-          .eq("weekly_exam_id", (activeExam as any).id)
-          .eq("user_id", user.id)
-          .gte("created_at", todayStartIso);
-        if (!todayCountErr) {
-          setAttemptsToday(todayCount ?? 0);
-        }
+        // Fetch question counts per exam (small N, simple fan-out)
+        const counts: Record<number, number> = {};
+        await Promise.all(
+          examIds.map(async (id) => {
+            const { count } = await supabase
+              .from("weekly_exam_questions")
+              .select("*", { count: "exact", head: true })
+              .eq("weekly_exam_id", id);
+            counts[id] = count ?? 0;
+          })
+        );
+        setQuestionCounts(counts);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         setError(msg || "Failed to load weekly exam.");
@@ -176,6 +179,72 @@ export default function WeeklyExamPage() {
     }
     loadLanding();
   }, [router]);
+
+  async function selectExamAndStart(chosen: WeeklyExamRow) {
+    try {
+      setError(null);
+      setExam(chosen);
+      setAttempt(null);
+      setResult(null);
+      setQuestions([]);
+      setAnswers([]);
+      setCurrentIndex(0);
+      setSecondsLeft(null);
+      setExamStartedAt(null);
+
+      if (!userId) return;
+      const supabase = createClient();
+      const { data: at } = await supabase
+        .from("weekly_exam_attempts")
+        .select("*")
+        .eq("weekly_exam_id", chosen.id)
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (at) {
+        setAttempt(at as WeeklyAttemptRow);
+        const score = Number((at as any).score ?? 0);
+        const total = Number((at as any).total ?? 0);
+        const timeTakenSeconds = Number((at as any).time_taken_seconds ?? 0);
+        const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
+        setResult({
+          score,
+          total,
+          percentage,
+          passed: percentage >= 50,
+          timeTakenSeconds,
+        });
+      }
+
+      const todayStartIso = new Date(new Date().toISOString().split("T")[0]).toISOString();
+      const { count: todayCount } = await supabase
+        .from("weekly_exam_attempts")
+        .select("*", { count: "exact", head: true })
+        .eq("weekly_exam_id", chosen.id)
+        .eq("user_id", userId)
+        .gte("created_at", todayStartIso);
+      setAttemptsToday(todayCount ?? 0);
+
+      const attemptsLeft = Math.max(0, attemptLimit - (todayCount ?? 0));
+      if (attemptsLeft <= 0) return;
+
+      const q = await loadExamQuestions();
+      if (q.length === 0) {
+        setError("No weekly exam questions found.");
+        return;
+      }
+      setQuestions(q);
+      setAnswers(new Array(q.length).fill(null));
+      setCurrentIndex(0);
+      setExamStartedAt(Date.now());
+      setSecondsLeft((chosen.duration_minutes ?? 45) * 60);
+      setPhase("exam");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg || "Failed to start weekly exam.");
+    }
+  }
 
   useEffect(() => {
     if (phase !== "exam" || secondsLeft == null) return;
@@ -197,18 +266,18 @@ export default function WeeklyExamPage() {
     const supabase = createClient();
     const { data, error: qErr } = await supabase
       .from("weekly_exam_questions")
-      .select("question_order, question_id, questions(id, question_text, option_a, option_b, option_c, option_d, correct_answer, explanation)")
+      .select("question_id, questions(id, question_text, option_a, option_b, option_c, option_d, correct_answer, explanation)")
       .eq("weekly_exam_id", exam.id)
-      .order("question_order", { ascending: true });
+      .order("question_id", { ascending: true });
 
     if (qErr) throw new Error(qErr.message);
 
     const mapped: ExamQuestion[] = ((data ?? []) as any[])
-      .map((row) => {
+      .map((row, idx) => {
         const qRaw = Array.isArray(row.questions) ? row.questions[0] : row.questions;
         if (!qRaw) return null;
         return {
-          order: Number(row.question_order ?? 0),
+          order: idx + 1,
           question: qRaw as QuestionRow,
         };
       })
@@ -218,24 +287,8 @@ export default function WeeklyExamPage() {
   }
 
   async function handleStartExam() {
-    if (!exam || attemptsToday >= attemptLimit) return;
-    try {
-      setError(null);
-      const q = await loadExamQuestions();
-      if (q.length === 0) {
-        setError("No weekly exam questions found.");
-        return;
-      }
-      setQuestions(q);
-      setAnswers(new Array(q.length).fill(null));
-      setCurrentIndex(0);
-      setExamStartedAt(Date.now());
-      setSecondsLeft((exam.duration_minutes ?? 45) * 60);
-      setPhase("exam");
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setError(msg || "Failed to start weekly exam.");
-    }
+    if (!exam) return;
+    await selectExamAndStart(exam);
   }
 
   function handleChooseAnswer(answer: "A" | "B" | "C" | "D") {
@@ -354,90 +407,95 @@ export default function WeeklyExamPage() {
 
           {phase === "landing" && (
             <>
-              {!exam ? (
+              {exams.length === 0 ? (
                 <div className="rounded-2xl border border-border/70 bg-card/90 p-6 shadow-lg">
-                  <p className="text-muted-foreground">No weekly exam this week. Check back soon! 📅</p>
+                  <p className="text-muted-foreground">No weekly exams this week. Check back soon!</p>
                 </div>
               ) : (
-                <div className="space-y-5 rounded-2xl border border-yellow-500/70 bg-card/95 p-6 shadow-lg shadow-yellow-500/10">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full border border-yellow-500/80 bg-yellow-500/10 px-3 py-1 text-xs font-semibold text-gold">
-                      Today's Weekly Exam
-                    </span>
-                    <span className="rounded-full border border-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
-                      {attemptsToday}/{attemptLimit} attempts used today
-                    </span>
-                  </div>
-                  <div className="space-y-1">
-                    <h2 className="text-2xl font-bold text-gold">{exam.title}</h2>
-                    <p className="text-sm text-muted-foreground">{exam.description ?? "Weekly challenge exam"}</p>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2 text-sm">
-                    <p>
-                      <span className="text-muted-foreground">Subject:</span>{" "}
-                      <span className="font-medium">{exam.subjects?.name ?? "General"}</span>
+                <div className="space-y-5">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-sm text-muted-foreground">
+                      {exams.length} exam{exams.length === 1 ? "" : "s"} available this week
                     </p>
-                    <p>
-                      <span className="text-muted-foreground">Grade:</span>{" "}
-                      <span className="font-medium">{exam.grade ?? "—"}</span>
-                    </p>
-                    <p>
-                      <span className="text-muted-foreground">Questions:</span>{" "}
-                      <span className="font-medium">{questionCount}</span>
-                    </p>
-                    <p>
-                      <span className="text-muted-foreground">Duration:</span>{" "}
-                      <span className="font-medium">{exam.duration_minutes ?? 45} min</span>
-                    </p>
-                    <p className="sm:col-span-2">
-                      <span className="text-muted-foreground">Deadline:</span>{" "}
-                      <span className="font-medium">
-                        {new Date(exam.week_end).toLocaleDateString(undefined, { dateStyle: "medium" })}
-                      </span>
+                    <p className="text-sm text-muted-foreground">
+                      Each exam can be attempted up to {attemptLimit} times per day.
                     </p>
                   </div>
-
-                  <div className="rounded-xl border border-yellow-500/40 bg-yellow-500/5 p-4 text-sm">
-                    <p className="font-semibold text-gold">
-                      One exam per day, all week
-                    </p>
-                    <p className="mt-1 text-muted-foreground">
-                      You can retake today's weekly exam up to {attemptLimit} times. Attempts left today:{" "}
-                      <span className="font-semibold text-foreground">{attemptsLeft}</span>.
-                    </p>
-                  </div>
-
-                  {attempt && result ? (
-                    <div className="space-y-3 rounded-xl border border-border/70 bg-background/20 p-4">
-                      <p className="text-sm">
-                        Latest score:{" "}
-                        <span className="font-semibold text-gold">
-                          {result.score}/{result.total}
-                        </span>{" "}
-                        · {result.percentage}% · {formatTime(result.timeTakenSeconds)}
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        <Button onClick={handleViewResults} variant="outline">
-                          View Last Results
-                        </Button>
-                        <Button
-                          onClick={handleStartExam}
-                          disabled={attemptsLeft === 0}
-                          className="bg-gold text-black hover:bg-gold/90"
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {exams.map((ex) => {
+                      const cnt = questionCounts[ex.id] ?? 0;
+                      const at = latestAttempts[ex.id];
+                      const score = Number((at as any)?.score ?? 0);
+                      const total = Number((at as any)?.total ?? 0);
+                      const completed = Boolean(at && total >= 0);
+                      return (
+                        <div
+                          key={ex.id}
+                          className="rounded-2xl border border-border/70 bg-card/90 p-5 shadow-md transition-all hover:border-gold/35 hover:shadow-lg"
                         >
-                          {attemptsLeft === 0 ? "Today's Attempts Finished" : "Retake Weekly Exam"}
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <Button
-                      onClick={handleStartExam}
-                      disabled={attemptsLeft === 0}
-                      className="w-full sm:w-auto bg-gold text-black hover:bg-gold/90"
-                    >
-                      {attemptsLeft === 0 ? "Today's Attempts Finished" : "Start Weekly Exam"}
-                    </Button>
-                  )}
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <h2 className="truncate text-lg font-bold text-gold">{ex.title}</h2>
+                              <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+                                {ex.description ?? "Weekly challenge exam"}
+                              </p>
+                            </div>
+                            {completed && (
+                              <span className="shrink-0 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-500">
+                                {score}/{total}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
+                            <p>
+                              <span className="text-muted-foreground">Subject:</span>{" "}
+                              <span className="font-medium">{ex.subjects?.name ?? "General"}</span>
+                            </p>
+                            <p>
+                              <span className="text-muted-foreground">Grade:</span>{" "}
+                              <span className="font-medium">{ex.grade ?? "—"}</span>
+                            </p>
+                            <p>
+                              <span className="text-muted-foreground">Questions:</span>{" "}
+                              <span className="font-medium">{cnt}</span>
+                            </p>
+                            <p>
+                              <span className="text-muted-foreground">Time limit:</span>{" "}
+                              <span className="font-medium">{ex.duration_minutes ?? 45} min</span>
+                            </p>
+                            <p className="sm:col-span-2">
+                              <span className="text-muted-foreground">Deadline:</span>{" "}
+                              <span className="font-medium">
+                                {new Date(ex.week_end).toLocaleDateString(undefined, { dateStyle: "medium" })}
+                              </span>
+                            </p>
+                          </div>
+
+                          <div className="mt-5">
+                            {!completed ? (
+                              <Button
+                                type="button"
+                                onClick={() => void selectExamAndStart(ex)}
+                                className="w-full bg-gold text-black hover:bg-gold/90"
+                              >
+                                Start Exam
+                              </Button>
+                            ) : (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => void selectExamAndStart(ex)}
+                                className="w-full"
+                              >
+                                Retake Exam
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </>

@@ -21,12 +21,7 @@ type SessionRow = {
 };
 
 type WeeklyExamSummary = {
-  id: number;
-  title: string;
-  week_end: string;
-  attemptScore?: number | null;
-  attemptTotal?: number | null;
-  attemptsToday?: number;
+  count: number;
 };
 
 export default function DashboardPage() {
@@ -130,43 +125,13 @@ export default function DashboardPage() {
         setRecentSessions((sessions as unknown as SessionRow[]) ?? []);
 
         const today = new Date().toISOString().split("T")[0];
-        const { data: activeWeekly } = await supabase
+        const { count: weeklyCount } = await supabase
           .from("weekly_exams")
-          .select("id, title, week_end")
+          .select("*", { count: "exact", head: true })
           .eq("is_active", true)
           .lte("week_start", today)
-          .gte("week_end", today)
-          .order("week_start", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (activeWeekly) {
-          const todayStartIso = new Date(new Date().toISOString().split("T")[0]).toISOString();
-          const { data: attemptRow } = await supabase
-            .from("weekly_exam_attempts")
-            .select("score, total")
-            .eq("user_id", user.id)
-            .eq("weekly_exam_id", (activeWeekly as any).id)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          const { count: attemptsToday } = await supabase
-            .from("weekly_exam_attempts")
-            .select("*", { count: "exact", head: true })
-            .eq("user_id", user.id)
-            .eq("weekly_exam_id", (activeWeekly as any).id)
-            .gte("created_at", todayStartIso);
-          setWeeklyExam({
-            id: (activeWeekly as any).id,
-            title: (activeWeekly as any).title,
-            week_end: (activeWeekly as any).week_end,
-            attemptScore: (attemptRow as any)?.score ?? null,
-            attemptTotal: (attemptRow as any)?.total ?? null,
-            attemptsToday: attemptsToday ?? 0,
-          });
-        } else {
-          setWeeklyExam(null);
-        }
+          .gte("week_end", today);
+        setWeeklyExam(weeklyCount && weeklyCount > 0 ? { count: weeklyCount } : null);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         setLoadError(msg || "Something went wrong while loading the dashboard.");
@@ -399,30 +364,16 @@ export default function DashboardPage() {
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-gold">Priority: Weekly Exam</p>
-                  <p className="font-semibold text-gold text-lg">{weeklyExam.title}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    1 exam per day throughout the week · up to 3 attempts each day
+                  <p className="font-semibold text-gold text-lg">
+                    {weeklyExam.count} exam{weeklyExam.count === 1 ? "" : "s"} available this week
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Deadline:{" "}
-                    {new Date(weeklyExam.week_end).toLocaleDateString(undefined, {
-                      dateStyle: "medium",
-                    })}
+                    View all active weekly exams for this week.
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="rounded-full border border-yellow-500/60 px-3 py-1 text-xs font-semibold text-gold">
-                    {weeklyExam.attemptsToday ?? 0}/3 today
-                  </span>
-                  {weeklyExam.attemptScore != null && weeklyExam.attemptTotal != null && (
-                    <span className="rounded-full border border-yellow-500/60 px-3 py-1 text-xs font-semibold text-gold">
-                      Last: {weeklyExam.attemptScore}/{weeklyExam.attemptTotal}
-                    </span>
-                  )}
                   <Button asChild className="bg-gold text-black hover:bg-gold/90">
-                    <Link href="/weekly-exam">
-                      {(weeklyExam.attemptsToday ?? 0) >= 3 ? "View Weekly Exam →" : "Take Weekly Exam →"}
-                    </Link>
+                    <Link href="/weekly-exam">View Weekly Exams →</Link>
                   </Button>
                 </div>
               </div>

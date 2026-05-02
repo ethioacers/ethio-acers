@@ -149,6 +149,7 @@ export default function PracticePage() {
           .select("year")
           .eq("subject_id", resolvedId)
           .eq("grade", grade)
+          .eq("is_weekly_only", false)
           .not("year", "is", null);
         if (cancelled) return;
         if (error) {
@@ -177,6 +178,7 @@ export default function PracticePage() {
           .select("chapter")
           .eq("subject_id", resolvedId)
           .eq("grade", grade)
+          .eq("is_weekly_only", false)
           .not("chapter", "is", null);
         if (cancelled) return;
         if (error) {
@@ -239,7 +241,8 @@ export default function PracticePage() {
         .from("questions")
         .select("*")
         .eq("subject_id", resolvedId)
-        .eq("grade", grade);
+        .eq("grade", grade)
+        .eq("is_weekly_only", false);
       if (selectedYear != null) {
         query = query.eq("year", selectedYear);
       }
