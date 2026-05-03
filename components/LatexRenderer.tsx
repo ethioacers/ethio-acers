@@ -67,15 +67,17 @@ function parseLatex(text: string): { type: "text" | "latex"; value: string; disp
 /** Finds LaTeX commands like \frac{3}{2}, \leq, \infty in plain text and splits into text/latex parts */
 function splitLatexIslands(text: string): { type: "text" | "latex"; value: string; displayMode?: boolean }[] {
   const parts: { type: "text" | "latex"; value: string; displayMode?: boolean }[] = [];
-  const re = /\\(frac\{[^{}]+\}\{[^{}]+\}|sqrt\{[^{}]+\}|[a-zA-Z]+(?:\([^)]*\))?)/g;
+  // One or more '\' so DB/API double-escaping (e.g. \\rightarrow) still becomes valid KaTeX input
+  const re = /\\+(frac\{[^{}]+\}\{[^{}]+\}|sqrt\{[^{}]+\}|[a-zA-Z]+(?:\([^)]*\))?)/g;
   let lastEnd = 0;
   let m;
   while ((m = re.exec(text)) !== null) {
     if (m.index > lastEnd) {
       parts.push({ type: "text", value: text.slice(lastEnd, m.index) });
     }
-    parts.push({ type: "latex", value: m[0], displayMode: false });
-    lastEnd = m.index + m[0].length;
+    const raw = m[0];
+    parts.push({ type: "latex", value: raw.replace(/^\\+/, "\\"), displayMode: false });
+    lastEnd = m.index + raw.length;
   }
   if (lastEnd < text.length) {
     parts.push({ type: "text", value: text.slice(lastEnd) });

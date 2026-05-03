@@ -1,173 +1,19 @@
 "use client";
 
 import {
-  cloneElement,
-  Fragment,
-  isValidElement,
   useCallback,
   useEffect,
   useMemo,
   useState,
 } from "react";
-import type { ComponentPropsWithoutRef, ReactElement, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Download } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import type { Components } from "react-markdown";
 import { createClient } from "@/lib/supabase";
 import { Navbar } from "@/components/Navbar";
-import { LatexRenderer } from "@/components/LatexRenderer";
+import { NoteMarkdown } from "@/components/notes/NoteMarkdown";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-/** Walk markdown-rendered React nodes and render string leaves with LatexRenderer ($...$, etc.). */
-function mapMdLeaves(node: ReactNode): ReactNode {
-  if (node == null || typeof node === "boolean") return node;
-  if (typeof node === "string") return <LatexRenderer text={node} />;
-  if (typeof node === "number") return <LatexRenderer text={String(node)} />;
-  if (Array.isArray(node)) {
-    return node.map((child, i) => <Fragment key={i}>{mapMdLeaves(child)}</Fragment>);
-  }
-  if (isValidElement(node)) {
-    const el = node as ReactElement<{ children?: ReactNode }>;
-    const ch = el.props.children;
-    if (ch !== undefined && ch !== null) {
-      return cloneElement(el, { children: mapMdLeaves(ch) });
-    }
-    return el;
-  }
-  return node;
-}
-
-function MarkdownLeafWithLatex({ children }: { children?: ReactNode }) {
-  return <>{mapMdLeaves(children)}</>;
-}
-
-function noteMarkdownComponents(): Components {
-  return {
-    table: ({ children }) => (
-      <div className="my-4 overflow-x-auto rounded-lg border border-border/90 bg-background/90 dark:border-gold/25 dark:bg-muted/40">
-        <table className="w-full min-w-[min(100%,36rem)] border-collapse border border-border text-sm dark:border-gold/20">
-          {children}
-        </table>
-      </div>
-    ),
-    thead: ({ children }) => (
-      <thead className="border-b border-border dark:border-gold/25">{children}</thead>
-    ),
-    tbody: ({ children }) => <tbody>{children}</tbody>,
-    tr: ({ children }) => (
-      <tr className="even:bg-muted/30 dark:even:bg-muted/20">{children}</tr>
-    ),
-    th: ({ children }) => (
-      <th className="border border-border bg-muted px-3 py-2 text-left text-sm font-semibold text-gold dark:border-gold/25 dark:bg-muted/70">
-        <MarkdownLeafWithLatex>{children}</MarkdownLeafWithLatex>
-      </th>
-    ),
-    td: ({ children }) => (
-      <td className="border border-border px-3 py-2 dark:border-gold/15">
-        <MarkdownLeafWithLatex>{children}</MarkdownLeafWithLatex>
-      </td>
-    ),
-    p: ({ children }) => (
-      <p className="mb-3 leading-relaxed">
-        <MarkdownLeafWithLatex>{children}</MarkdownLeafWithLatex>
-      </p>
-    ),
-    h1: ({ children }) => (
-      <h1 className="mb-3 text-xl font-bold text-primary">
-        <MarkdownLeafWithLatex>{children}</MarkdownLeafWithLatex>
-      </h1>
-    ),
-    h2: ({ children }) => (
-      <h2 className="mb-2 text-lg font-bold text-primary">
-        <MarkdownLeafWithLatex>{children}</MarkdownLeafWithLatex>
-      </h2>
-    ),
-    h3: ({ children }) => (
-      <h3 className="mb-2 text-base font-semibold text-primary">
-        <MarkdownLeafWithLatex>{children}</MarkdownLeafWithLatex>
-      </h3>
-    ),
-    ul: ({ children }) => (
-      <ul className="mb-3 list-inside list-disc space-y-1">{children}</ul>
-    ),
-    ol: ({ children }) => (
-      <ol className="mb-3 list-inside list-decimal space-y-1">{children}</ol>
-    ),
-    li: ({ children }) => (
-      <li className="leading-relaxed">
-        <MarkdownLeafWithLatex>{children}</MarkdownLeafWithLatex>
-      </li>
-    ),
-    blockquote: ({ children }) => (
-      <blockquote className="mb-3 border-l-4 border-gold/40 pl-4 italic text-muted-foreground">
-        <MarkdownLeafWithLatex>{children}</MarkdownLeafWithLatex>
-      </blockquote>
-    ),
-    a: ({ href, children }) => (
-      <a
-        href={href}
-        className="font-medium text-gold underline underline-offset-2 hover:text-gold/90"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <MarkdownLeafWithLatex>{children}</MarkdownLeafWithLatex>
-      </a>
-    ),
-    strong: ({ children }) => (
-      <strong className="font-semibold">
-        <MarkdownLeafWithLatex>{children}</MarkdownLeafWithLatex>
-      </strong>
-    ),
-    em: ({ children }) => (
-      <em>
-        <MarkdownLeafWithLatex>{children}</MarkdownLeafWithLatex>
-      </em>
-    ),
-    hr: () => <hr className="my-6 border-border dark:border-gold/20" />,
-    code: (props) => {
-      const { inline, className, children, node: _node, ...rest } = props as ComponentPropsWithoutRef<"code"> & {
-        inline?: boolean;
-        node?: unknown;
-      };
-      if (inline) {
-        return (
-          <code
-            className={`rounded bg-muted px-1 py-0.5 font-mono text-[0.9em] dark:bg-muted/60 ${className ?? ""}`}
-            {...rest}
-          >
-            <MarkdownLeafWithLatex>{children}</MarkdownLeafWithLatex>
-          </code>
-        );
-      }
-      return (
-        <code className={`block font-mono text-sm ${className ?? ""}`} {...rest}>
-          {children}
-        </code>
-      );
-    },
-    pre: ({ children }) => (
-      <pre className="mb-3 overflow-x-auto rounded-lg border border-border bg-muted/70 p-3 text-xs dark:border-gold/20 dark:bg-muted/50">
-        {children}
-      </pre>
-    ),
-  };
-}
-
-function NoteMarkdown({ content }: { content: string }) {
-  if (!content?.trim()) return null;
-  return (
-    <div className="note-markdown max-w-none text-sm leading-relaxed text-foreground">
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={noteMarkdownComponents()}>
-        {content}
-      </ReactMarkdown>
-    </div>
-  );
-}
 
 type SubjectRow = { id: number; name: string; grade: number };
 
@@ -214,7 +60,6 @@ export default function NotesPage() {
   const [notesError, setNotesError] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<string>(AI_TAB_KEY);
-  const [expandedNoteId, setExpandedNoteId] = useState<number | null>(null);
 
   const [aiTopic, setAiTopic] = useState("");
   const [aiResult, setAiResult] = useState<{ content: string; isFromDb: boolean } | null>(null);
@@ -334,7 +179,6 @@ export default function NotesPage() {
       setNotes([]);
       setNotesError(null);
       setActiveTab(AI_TAB_KEY);
-      setExpandedNoteId(null);
       return;
     }
     if (!subjectId) {
@@ -350,10 +194,6 @@ export default function NotesPage() {
       setActiveTab(tabOrder[0] ?? AI_TAB_KEY);
     }
   }, [tabOrder, activeTab]);
-
-  useEffect(() => {
-    setExpandedNoteId(null);
-  }, [activeTab]);
 
   const notesForActiveUnit = useMemo(() => {
     if (activeTab === AI_TAB_KEY) return [];
@@ -682,17 +522,11 @@ export default function NotesPage() {
                 {activeTab !== AI_TAB_KEY && !notesLoading && notesForActiveUnit.length > 0 && (
                   <ul className="grid gap-4 sm:grid-cols-2">
                     {notesForActiveUnit.map((note) => {
-                      const expanded = expandedNoteId === note.id;
                       return (
                         <li key={note.id}>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setExpandedNoteId(expanded ? null : note.id)
-                            }
-                            className={`group w-full rounded-xl border bg-card/80 p-4 text-left shadow-sm transition-all hover:border-gold/45 hover:shadow-md dark:bg-card/40 ${
-                              expanded ? "border-gold/50 ring-1 ring-gold/20" : "border-border/70 dark:border-gold/10"
-                            }`}
+                          <Link
+                            href={`/notes/${note.id}`}
+                            className="group block w-full rounded-xl border border-border/70 bg-card/80 p-4 text-left shadow-sm transition-all hover:border-gold/45 hover:shadow-md dark:border-gold/10 dark:bg-card/40"
                           >
                             <h3 className="font-semibold text-foreground group-hover:text-gold">
                               {note.topic}
@@ -700,27 +534,7 @@ export default function NotesPage() {
                             <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
                               {previewText(note.content)}
                             </p>
-                            {expanded && (
-                              <div className="mt-4 space-y-4 border-t border-border/60 pt-4 dark:border-gold/10">
-                                {note.file_url && (
-                                  <a
-                                    href={note.file_url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-2 rounded-lg border border-gold/35 bg-gold/10 px-3 py-2 text-sm font-medium text-gold transition-colors hover:bg-gold/20"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <Download className="h-4 w-4 shrink-0" aria-hidden />
-                                    Download PDF
-                                  </a>
-                                )}
-                                {note.content?.trim() && <NoteMarkdown content={note.content} />}
-                                {!note.content?.trim() && !note.file_url && (
-                                  <p className="text-sm text-muted-foreground">No content for this note.</p>
-                                )}
-                              </div>
-                            )}
-                          </button>
+                          </Link>
                         </li>
                       );
                     })}

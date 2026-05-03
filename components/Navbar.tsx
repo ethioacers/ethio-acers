@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase";
@@ -20,6 +20,34 @@ export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const [logoutError, setLogoutError] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) {
+          if (!cancelled) setIsAdmin(false);
+          return;
+        }
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("is_admin")
+          .eq("id", user.id)
+          .single();
+        if (!cancelled) setIsAdmin(Boolean(profile?.is_admin));
+      } catch {
+        if (!cancelled) setIsAdmin(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
 
   async function handleLogout() {
     setLogoutError(null);
@@ -107,6 +135,11 @@ export function Navbar() {
                   {label}
                 </Link>
               ))}
+              {isAdmin && (
+                <Link href="/admin" className={navLinkClass("/admin")}>
+                  Admin
+                </Link>
+              )}
             </nav>
 
             {/* Medium widths: horizontal scroll instead of crushed links */}
@@ -116,6 +149,11 @@ export function Navbar() {
                   {label}
                 </Link>
               ))}
+              {isAdmin && (
+                <Link href="/admin" className={`${navLinkClass("/admin")} shrink-0`}>
+                  Admin
+                </Link>
+              )}
             </nav>
 
             <button
@@ -224,6 +262,25 @@ export function Navbar() {
             </svg>
             Profile
           </Link>
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className={`flex flex-1 flex-col items-center justify-center gap-0.5 rounded-lg py-1.5 text-[10px] font-medium transition-colors ${
+                pathname.startsWith("/admin") ? "text-gold" : "text-muted-foreground hover:bg-accent/70 hover:text-foreground"
+              }`}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path
+                  d="M12 2 4 6v6c0 5 3 10 8 11 5-1 8-6 8-11V6l-8-4Z"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinejoin="round"
+                />
+                <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+              Admin
+            </Link>
+          )}
         </div>
       </div>
     </Fragment>
