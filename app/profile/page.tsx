@@ -36,6 +36,11 @@ export default function ProfilePage() {
   const [grade, setGrade] = useState<number | "">("");
   const [totalAttempts, setTotalAttempts] = useState(0);
   const [correctAttempts, setCorrectAttempts] = useState(0);
+  const [totalPoints, setTotalPoints] = useState(0);
+  const [weeklyPoints, setWeeklyPoints] = useState(0);
+  const [pointsHistory, setPointsHistory] = useState<
+    { id: string; points: number; reason: string | null; created_at: string }[]
+  >([]);
 
   useEffect(() => {
     async function load() {
@@ -67,11 +72,26 @@ export default function ProfilePage() {
           setLoadError(profileErr.message);
         }
         if (profile) {
-          const p = profile as ProfileRow;
+          const p = profile as ProfileRow & {
+            total_points?: number | null;
+            weekly_points?: number | null;
+          };
           setFullName(p.full_name ?? "");
           setSchoolName(p.school_name ?? "");
           setGrade(p.grade != null ? p.grade : "");
           setCreatedAt((s) => s || p.created_at);
+          setTotalPoints(Number(p.total_points ?? 0));
+          setWeeklyPoints(Number(p.weekly_points ?? 0));
+        }
+
+        const { data: histRows, error: histErr } = await supabase
+          .from("points_history")
+          .select("id, points, reason, created_at")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(10);
+        if (!histErr && histRows) {
+          setPointsHistory(histRows as { id: string; points: number; reason: string | null; created_at: string }[]);
         }
 
         const { count: total, error: totalErr } = await supabase
@@ -278,6 +298,14 @@ export default function ProfilePage() {
               <Label>Overall accuracy</Label>
               <p className="text-sm text-muted-foreground">{accuracy}%</p>
             </div>
+            <div className="space-y-2">
+              <Label>Total points earned</Label>
+              <p className="text-sm font-semibold text-gold">{totalPoints}</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Weekly points</Label>
+              <p className="text-sm font-semibold text-gold">{weeklyPoints}</p>
+            </div>
             {success && (
               <p className="text-sm text-green-600">Profile saved successfully.</p>
             )}
@@ -288,6 +316,26 @@ export default function ProfilePage() {
               {saving ? "Saving…" : "Save"}
             </Button>
           </form>
+
+          <div className="space-y-4 rounded-2xl border border-border/70 bg-card/90 p-6 shadow-lg">
+            <h2 className="text-lg font-semibold">Points history</h2>
+            <p className="text-xs text-muted-foreground">Last 10 awards.</p>
+            {pointsHistory.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No history yet — earn points from practice and exams.</p>
+            ) : (
+              <ul className="divide-y divide-border/60 dark:divide-gold/10">
+                {pointsHistory.map((row) => (
+                  <li key={row.id} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
+                    <span className="text-muted-foreground">{row.reason ?? "Points"}</span>
+                    <span className="font-semibold tabular-nums text-gold">
+                      {row.points >= 0 ? "+" : ""}
+                      {row.points}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </main>
     </>

@@ -10,6 +10,7 @@ const DESKTOP_LINKS = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/practice", label: "Practice" },
   { href: "/weekly-exam", label: "Weekly exam" },
+  { href: "/leaderboard", label: "Leaderboard" },
   { href: "/flashcards", label: "Flashcards" },
   { href: "/notes", label: "Notes" },
   { href: "/pricing", label: "Pricing" },
@@ -213,6 +214,17 @@ export function Navbar() {
               <path d="M9 13h6M9 17h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
             </svg>
             Weekly
+          </Link>
+          <Link
+            href="/leaderboard"
+            className={`flex flex-1 flex-col items-center justify-center gap-0.5 rounded-lg py-1.5 text-[10px] font-medium transition-colors ${
+              pathname.startsWith("/leaderboard") ? "text-gold" : "text-muted-foreground hover:bg-accent/70 hover:text-foreground"
+            }`}
+          >
+            <span className="text-lg leading-none" aria-hidden>
+              🏆
+            </span>
+            <span className="max-w-[4rem] truncate text-center leading-tight">Leaderboard</span>
           </Link>
           <Link
             href="/notes"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase";
@@ -9,6 +9,7 @@ import { getUsageForUser, type UsageResult } from "@/lib/usage";
 import { StreakCalendar } from "@/components/StreakCalendar";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
+import { fetchMyPointsSummary, type MyPointsSummary } from "@/lib/points";
 
 type SessionRow = {
   id: string;
@@ -40,6 +41,9 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [usage, setUsage] = useState<UsageResult | null>(null);
+  const [pointsSummary, setPointsSummary] = useState<MyPointsSummary | null>(null);
+  const [pointsFlash, setPointsFlash] = useState(false);
+  const pointsSeenRef = useRef(false);
 
   useEffect(() => {
     async function load() {
@@ -63,10 +67,21 @@ export default function DashboardPage() {
         try {
           const profile = await getProfile(user.id);
           if (profile) {
+            const today = new Date().toISOString().split("T")[0];
+            const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+            const last = profile.last_session_date;
+            if (last !== today && last !== yesterday) {
+              const { error: streakResetErr } = await supabase
+                .from("profiles")
+                .update({ current_streak: 0 })
+                .eq("id", user.id);
+              setStreak(streakResetErr ? profile.current_streak : 0);
+            } else {
+              setStreak(profile.current_streak);
+            }
             setStudentName(profile.full_name || "Student");
             setGrade(profile.grade);
             setSchoolName(profile.school_name || "");
-            setStreak(profile.current_streak);
           }
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
@@ -87,6 +102,24 @@ export default function DashboardPage() {
         } catch (err) {
           // Non-fatal: dashboard can still render without usage
           console.error("dashboard usage load error:", err);
+        }
+
+        try {
+          const summary = await fetchMyPointsSummary();
+          setPointsSummary(summary);
+          if (summary && typeof window !== "undefined") {
+            const key = `ethio_seen_points_${user.id}`;
+            const prev = sessionStorage.getItem(key);
+            const prevN = prev != null ? Number(prev) : null;
+            if (!pointsSeenRef.current && prevN != null && !Number.isNaN(prevN) && summary.total_points > prevN) {
+              setPointsFlash(true);
+              window.setTimeout(() => setPointsFlash(false), 1800);
+            }
+            pointsSeenRef.current = true;
+            sessionStorage.setItem(key, String(summary.total_points));
+          }
+        } catch (err) {
+          console.error("dashboard points load error:", err);
         }
 
         const { count: attemptsTotal, error: attemptsErr } = await supabase
@@ -177,6 +210,52 @@ export default function DashboardPage() {
               {schoolName}
             </p>
           </div>
+
+          {pointsSummary && (
+            <div
+              className={[
+                "rounded-2xl border border-border/70 bg-card/90 p-6 shadow-lg transition-all duration-500 dark:border-gold/15",
+                pointsFlash
+                  ? "scale-[1.02] ring-2 ring-gold/70 shadow-[0_0_28px_-4px_hsl(var(--gold)/0.45)]"
+                  : "",
+              ].join(" ")}
+            >
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Points</p>
+                  <p className="mt-1 text-lg font-bold text-gold">Keep climbing the leaderboard</p>
+                </div>
+                <Link
+                  href="/leaderboard"
+                  className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  View leaderboard →
+                </Link>
+              </div>
+              <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                <div className="rounded-xl border border-border/60 bg-background/50 p-4 dark:border-gold/10">
+                  <p className="text-xs font-medium text-muted-foreground">Total points</p>
+                  <p
+                    className={[
+                      "mt-1 text-2xl font-extrabold tabular-nums text-gold transition-transform duration-300",
+                      pointsFlash ? "scale-110" : "",
+                    ].join(" ")}
+                  >
+                    {pointsSummary.total_points}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-border/60 bg-background/50 p-4 dark:border-gold/10">
+                  <p className="text-xs font-medium text-muted-foreground">Weekly points</p>
+                  <p className="mt-1 text-2xl font-extrabold tabular-nums text-gold">{pointsSummary.weekly_points}</p>
+                </div>
+                <div className="rounded-xl border border-border/60 bg-background/50 p-4 dark:border-gold/10">
+                  <p className="text-xs font-medium text-muted-foreground">Your rank</p>
+                  <p className="mt-1 text-2xl font-extrabold tabular-nums text-gold">#{pointsSummary.rank_all}</p>
+                  <p className="text-[10px] text-muted-foreground">This week: #{pointsSummary.rank_weekly}</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Streak card */}
           <div className="space-y-4 rounded-2xl border border-border/70 bg-card/90 p-6 shadow-lg">

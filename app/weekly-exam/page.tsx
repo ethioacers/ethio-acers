@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { LatexRenderer } from "@/components/LatexRenderer";
+import { awardPoints } from "@/lib/points";
 
 type WeeklyExamRow = {
   id: number;
@@ -87,6 +88,7 @@ export default function WeeklyExamPage() {
     passed: boolean;
     timeTakenSeconds: number;
   } | null>(null);
+  const weeklyPointsAwardedRef = useRef(false);
 
   useEffect(() => {
     async function loadLanding() {
@@ -182,6 +184,7 @@ export default function WeeklyExamPage() {
 
   async function selectExamAndStart(chosen: WeeklyExamRow) {
     try {
+      weeklyPointsAwardedRef.current = false;
       setError(null);
       setExam(chosen);
       setAttempt(null);
@@ -324,6 +327,11 @@ export default function WeeklyExamPage() {
       timeTakenSeconds,
     });
     setPhase("results");
+
+    if (userId && !weeklyPointsAwardedRef.current) {
+      weeklyPointsAwardedRef.current = true;
+      void awardPoints(userId, score * 10, "Weekly exam");
+    }
 
     try {
       const supabase = createClient();

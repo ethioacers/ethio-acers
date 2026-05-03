@@ -1,10 +1,5 @@
 import { createClient } from "@/lib/supabase";
-
-function getPreviousDay(dateStr: string): string {
-  const d = new Date(dateStr);
-  d.setDate(d.getDate() - 1);
-  return d.toISOString().split("T")[0];
-}
+import { maybeAwardStreakMilestone } from "@/lib/points";
 
 export type Profile = {
   id: string;
@@ -55,17 +50,19 @@ export async function logSession(
 ): Promise<void> {
   try {
     const today = new Date().toISOString().split("T")[0];
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
     const profile = await getProfile(userId);
     if (!profile) return;
 
     const lastDate = profile.last_session_date ?? null;
-    const yesterday = getPreviousDay(today);
 
     let newStreak = 1;
-    if (lastDate === yesterday) {
-      newStreak = profile.current_streak + 1;
-    } else if (lastDate === today) {
+    if (lastDate === today) {
       newStreak = profile.current_streak;
+    } else if (lastDate === yesterday) {
+      newStreak = profile.current_streak + 1;
+    } else {
+      newStreak = 1;
     }
 
     await updateProfile(userId, {
@@ -83,7 +80,10 @@ export async function logSession(
     });
     if (error) {
       console.error("logSession insert error:", error);
+      return;
     }
+
+    await maybeAwardStreakMilestone(userId, newStreak);
   } catch (err) {
     console.error("logSession error:", err);
   }

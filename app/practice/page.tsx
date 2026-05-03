@@ -1,6 +1,6 @@
- "use client";
+"use client";
 
- import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
  import { useRouter } from "next/navigation";
  import Link from "next/link";
  import { createClient } from "@/lib/supabase";
@@ -13,6 +13,7 @@
  import { StreakPopup } from "@/components/StreakPopup";
  import { getExamQuestionCount, getExamTimeMinutes } from "@/lib/exam-config";
 import { startUsageSession, type SessionType } from "@/lib/usage";
+import { awardPoints } from "@/lib/points";
 
 type SubjectRow = { id: number; name: string; grade: number };
 
@@ -53,6 +54,7 @@ export default function PracticePage() {
   const [showStreakPopup, setShowStreakPopup] = useState(false);
   const [usageLocked, setUsageLocked] = useState<null | { sessionType: SessionType; limit: number; used: number }>(null);
   const [usageChecking, setUsageChecking] = useState(false);
+  const examPointsAwardedRef = useRef(false);
 
   // Full Exam Mode state
   const [examAnswers, setExamAnswers] = useState<( "A" | "B" | "C" | "D" | null)[]>([]);
@@ -275,6 +277,7 @@ export default function PracticePage() {
       setScore(0);
       setAttempts([]);
       setSessionLogged(false);
+      examPointsAwardedRef.current = false;
       setExamSubmitted(false);
       setExamResult(null);
       if (mode === "exam") {
@@ -359,6 +362,10 @@ export default function PracticePage() {
       else wrongEntries.push({ index: i, question: q, selectedAnswer: chosen });
     });
     setExamResult({ score: correctCount, total: questions.length, wrongEntries });
+    if (userId && !examPointsAwardedRef.current) {
+      examPointsAwardedRef.current = true;
+      void awardPoints(userId, correctCount * 10, "Full exam");
+    }
   }
 
   async function handleLogSession() {
@@ -367,6 +374,7 @@ export default function PracticePage() {
     setNonBlockingError(null);
     try {
       await logSession(userId, subjectId, score, questions.length);
+      await awardPoints(userId, score * 10, "Practice session");
       setSessionLogged(true);
       try {
         const supabase = createClient();
@@ -396,6 +404,7 @@ export default function PracticePage() {
     setSelectedAnswer(null);
     setExamAnswers([]);
     setExamSecondsLeft(null);
+    examPointsAwardedRef.current = false;
     setExamSubmitted(false);
     setExamResult(null);
   }
