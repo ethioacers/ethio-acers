@@ -1,6 +1,7 @@
  "use client";
 
 import { useMemo, useState } from "react";
+import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 
 type Plan = {
@@ -99,7 +100,9 @@ export default function PricingPage() {
   }
 
   return (
-    <main className="min-h-screen p-6 pb-12">
+    <>
+      <Navbar />
+      <main className="min-h-screen p-6 pb-24 md:pb-12">
       <div className="mx-auto max-w-3xl space-y-6">
         {/* Free trial banner */}
         <div className="rounded-2xl border border-yellow-500/60 bg-card/95 p-5 shadow-lg shadow-yellow-500/10">
@@ -319,6 +322,7 @@ export default function PricingPage() {
         </div>
       )}
     </main>
+    </>
   );
 }
 

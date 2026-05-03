@@ -1,17 +1,17 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
- import { useRouter } from "next/navigation";
- import Link from "next/link";
- import { createClient } from "@/lib/supabase";
- import { logSession } from "@/lib/streak";
- import { QuestionCard, type Question } from "@/components/QuestionCard";
- import { ScoreSummary } from "@/components/ScoreSummary";
- import { ExamScoreBreakdown } from "@/components/ExamScoreBreakdown";
- import { Button } from "@/components/ui/button";
- import { Navbar } from "@/components/Navbar";
- import { StreakPopup } from "@/components/StreakPopup";
- import { getExamQuestionCount, getExamTimeMinutes } from "@/lib/exam-config";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase";
+import { logSession } from "@/lib/streak";
+import { QuestionCard, type Question } from "@/components/QuestionCard";
+import { ScoreSummary } from "@/components/ScoreSummary";
+import { ExamScoreBreakdown } from "@/components/ExamScoreBreakdown";
+import { Button } from "@/components/ui/button";
+import { Navbar } from "@/components/Navbar";
+import { StreakPopup } from "@/components/StreakPopup";
+import { getExamQuestionCount, getExamTimeMinutes } from "@/lib/exam-config";
 import { startUsageSession, type SessionType } from "@/lib/usage";
 import { awardPoints } from "@/lib/points";
 
@@ -437,7 +437,7 @@ export default function PracticePage() {
     return (
       <>
         <Navbar />
-        <main className="flex min-h-screen items-center justify-center p-4">
+        <main className="flex min-h-screen items-center justify-center p-4 pb-24 md:pb-4">
           <p className="text-muted-foreground">Loading…</p>
         </main>
       </>
@@ -447,7 +447,7 @@ export default function PracticePage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen p-6">
+      <main className="min-h-screen p-6 pb-24 md:pb-6">
         <div className="mx-auto max-w-3xl space-y-8">
           <div className="flex items-center justify-between">
             <Link href="/dashboard" className="text-sm text-muted-foreground hover:underline">

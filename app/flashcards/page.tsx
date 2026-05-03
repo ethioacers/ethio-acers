@@ -339,7 +339,7 @@ export default function FlashcardsPage() {
     return (
       <>
         <Navbar />
-        <main className="flex min-h-screen items-center justify-center bg-background p-3">
+        <main className="flex min-h-screen items-center justify-center bg-background p-3 pb-24 md:pb-3">
           <p className="text-muted-foreground">Loading…</p>
         </main>
       </>
@@ -349,7 +349,7 @@ export default function FlashcardsPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-background p-6">
+      <main className="min-h-screen bg-background p-6 pb-24 md:pb-6">
         <div className="mx-auto flex max-w-3xl flex-col gap-8">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gold">Flashcards</h1>

@@ -179,7 +179,7 @@ export default function DashboardPage() {
     return (
       <>
         <Navbar />
-        <main className="flex min-h-screen items-center justify-center p-4">
+        <main className="flex min-h-screen items-center justify-center p-4 pb-24 md:pb-4">
           <p className="text-muted-foreground">Loading…</p>
         </main>
       </>
@@ -192,7 +192,7 @@ export default function DashboardPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen p-6">
+      <main className="min-h-screen p-6 pb-24 md:pb-6">
         <div className="mx-auto max-w-3xl space-y-8">
           {loadError && (
             <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 sm:p-4 text-sm text-destructive">

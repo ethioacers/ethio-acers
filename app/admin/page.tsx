@@ -65,7 +65,7 @@ export default function AdminPage() {
     return (
       <>
         <Navbar />
-        <main className="min-h-screen bg-background pb-28 pt-8 md:pb-10">
+        <main className="min-h-screen bg-background pb-24 pt-8 md:pb-10">
           <AdminSpinner label="Checking access…" />
         </main>
       </>
@@ -76,7 +76,7 @@ export default function AdminPage() {
     return (
       <>
         <Navbar />
-        <main className="min-h-screen bg-background pb-28 pt-8 md:pb-10">
+        <main className="min-h-screen bg-background pb-24 pt-8 md:pb-10">
           <AdminSpinner label="Redirecting…" />
         </main>
       </>

@@ -6,22 +6,38 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
-const DESKTOP_LINKS = [
+const DESKTOP_NAV_LINKS = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/practice", label: "Practice" },
-  { href: "/weekly-exam", label: "Weekly exam" },
+  { href: "/weekly-exam", label: "Weekly" },
   { href: "/leaderboard", label: "Leaderboard" },
-  { href: "/flashcards", label: "Flashcards" },
   { href: "/notes", label: "Notes" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/profile", label: "Profile" },
+  { href: "/flashcards", label: "Flashcards" },
+  { href: "/friends", label: "Friends" },
 ] as const;
+
+const MORE_ITEMS: {
+  href: string;
+  icon: string;
+  label: string;
+  adminOnly?: boolean;
+}[] = [
+  { href: "/notes", icon: "📖", label: "Notes" },
+  { href: "/flashcards", icon: "🃏", label: "Flashcards" },
+  { href: "/weekly-exam", icon: "📅", label: "Weekly Exam" },
+  { href: "/pricing", icon: "💰", label: "Plans" },
+  { href: "/friends", icon: "👥", label: "Friends" },
+  { href: "/admin", icon: "⚙️", label: "Admin", adminOnly: true },
+];
+
+const HIDE_MOBILE_BOTTOM_PATHS = new Set(["/", "/login", "/signup"]);
 
 export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,6 +66,19 @@ export function Navbar() {
     };
   }, [pathname]);
 
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!moreOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [moreOpen]);
+
   async function handleLogout() {
     setLogoutError(null);
     try {
@@ -67,9 +96,13 @@ export function Navbar() {
     }
   }
 
+  function navLinkActive(href: string) {
+    if (href === "/dashboard") return pathname === "/dashboard";
+    return pathname.startsWith(href);
+  }
+
   function navLinkClass(href: string) {
-    const active =
-      pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
+    const active = navLinkActive(href);
     return [
       "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
       active
@@ -78,9 +111,16 @@ export function Navbar() {
     ].join(" ");
   }
 
+  function mobileTabActive(href: string) {
+    return navLinkActive(href);
+  }
+
+  const showMobileBottom = pathname != null && !HIDE_MOBILE_BOTTOM_PATHS.has(pathname);
+
+  const drawerItems = MORE_ITEMS.filter((item) => !item.adminOnly || isAdmin);
+
   return (
     <Fragment>
-      {/* Top chrome: sticky sibling only — avoids fixed-inside-sticky bugs */}
       <header
         className="sticky top-0 z-[90] w-full border-b border-border/80 bg-background/95 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.12)] backdrop-blur-xl supports-[backdrop-filter]:bg-background/85 dark:border-primary/25 dark:bg-background/98 dark:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.5)]"
         style={{ WebkitBackdropFilter: "blur(14px)" }}
@@ -90,7 +130,6 @@ export function Navbar() {
           aria-hidden
         />
 
-        {/* Mobile top bar */}
         <div className="flex h-12 items-center justify-between gap-3 px-4 md:hidden">
           <Link
             href="/dashboard"
@@ -111,7 +150,6 @@ export function Navbar() {
           </div>
         </div>
 
-        {/* Desktop */}
         <div className="mx-auto hidden h-[3.25rem] max-w-6xl items-center justify-between gap-4 px-4 md:flex">
           <Link
             href="/dashboard"
@@ -131,31 +169,29 @@ export function Navbar() {
             )}
 
             <nav className="hidden lg:flex flex-wrap items-center justify-end gap-1">
-              {DESKTOP_LINKS.map(({ href, label }) => (
+              {DESKTOP_NAV_LINKS.map(({ href, label }) => (
                 <Link key={href} href={href} className={navLinkClass(href)}>
                   {label}
                 </Link>
               ))}
-              {isAdmin && (
-                <Link href="/admin" className={navLinkClass("/admin")}>
-                  Admin
-                </Link>
-              )}
             </nav>
 
-            {/* Medium widths: horizontal scroll instead of crushed links */}
             <nav className="flex max-w-[min(42rem,calc(100vw-14rem))] items-center gap-1 overflow-x-auto pb-0.5 lg:hidden [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {DESKTOP_LINKS.map(({ href, label }) => (
+              {DESKTOP_NAV_LINKS.map(({ href, label }) => (
                 <Link key={href} href={href} className={`${navLinkClass(href)} shrink-0`}>
                   {label}
                 </Link>
               ))}
-              {isAdmin && (
-                <Link href="/admin" className={`${navLinkClass("/admin")} shrink-0`}>
-                  Admin
-                </Link>
-              )}
             </nav>
+
+            <Link href="/pricing" className={`${navLinkClass("/pricing")} shrink-0`}>
+              Plans
+            </Link>
+            {isAdmin && (
+              <Link href="/admin" className={`${navLinkClass("/admin")} shrink-0`}>
+                Admin
+              </Link>
+            )}
 
             <button
               type="button"
@@ -169,132 +205,121 @@ export function Navbar() {
         </div>
       </header>
 
-      {/* Mobile bottom bar — sibling of sticky header, not nested */}
-      <div className="fixed bottom-0 left-0 right-0 z-[90] border-t border-border/80 bg-background/98 pb-[env(safe-area-inset-bottom)] pt-1 shadow-[0_-10px_40px_-12px_rgba(0,0,0,0.15)] backdrop-blur-xl supports-[backdrop-filter]:bg-background/90 md:hidden dark:border-primary/20 dark:shadow-[0_-12px_40px_-12px_rgba(0,0,0,0.55)]">
-        <div className="mx-auto flex max-w-4xl items-stretch justify-between px-1">
-          <Link
-            href="/dashboard"
-            className={`flex flex-1 flex-col items-center justify-center gap-0.5 rounded-lg py-1.5 text-[10px] font-medium transition-colors ${
-              pathname === "/dashboard"
-                ? "text-primary"
-                : "text-muted-foreground hover:bg-accent/70 hover:text-foreground"
-            }`}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path
-                d="M3 10.5L12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5Z"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinejoin="round"
+      {showMobileBottom && (
+        <>
+          <div className="fixed bottom-0 left-0 right-0 z-[90] border-t border-border/80 bg-background/98 pb-[env(safe-area-inset-bottom)] pt-1 shadow-[0_-10px_40px_-12px_rgba(0,0,0,0.15)] backdrop-blur-xl supports-[backdrop-filter]:bg-background/90 md:hidden dark:border-primary/20 dark:shadow-[0_-12px_40px_-12px_rgba(0,0,0,0.55)]">
+            <div className="mx-auto grid max-w-md grid-cols-5 items-end gap-0 px-2 pb-1 pt-1">
+              <Link
+                href="/dashboard"
+                className={`flex flex-col items-center justify-end gap-0.5 rounded-lg py-1 text-[10px] font-medium transition-colors ${
+                  mobileTabActive("/dashboard")
+                    ? "text-primary"
+                    : "text-muted-foreground hover:bg-accent/70 hover:text-foreground"
+                }`}
+              >
+                <span className="text-lg leading-none" aria-hidden>
+                  🏠
+                </span>
+                Home
+              </Link>
+              <Link
+                href="/practice"
+                className={`flex flex-col items-center justify-end gap-0.5 rounded-lg py-1 text-[10px] font-medium transition-colors ${
+                  pathname.startsWith("/practice")
+                    ? "text-primary"
+                    : "text-muted-foreground hover:bg-accent/70 hover:text-foreground"
+                }`}
+              >
+                <span className="text-lg leading-none" aria-hidden>
+                  📝
+                </span>
+                Practice
+              </Link>
+              <div className="flex flex-col items-center justify-end pb-0.5">
+                <button
+                  type="button"
+                  aria-expanded={moreOpen}
+                  aria-haspopup="dialog"
+                  aria-label="More navigation"
+                  onClick={() => setMoreOpen(true)}
+                  className={[
+                    "flex h-[3.25rem] w-[3.25rem] flex-col items-center justify-center rounded-2xl bg-gold text-center text-[10px] font-bold leading-tight text-black shadow-[0_8px_20px_-4px_rgba(0,0,0,0.35),0_4px_0_0_rgba(202,138,4,0.45)] ring-2 ring-gold/60 transition-transform active:translate-y-0.5 active:shadow-md",
+                    moreOpen ? "ring-primary/40" : "",
+                  ].join(" ")}
+                >
+                  <span className="text-xl leading-none" aria-hidden>
+                    🔍
+                  </span>
+                  More
+                </button>
+              </div>
+              <Link
+                href="/leaderboard"
+                className={`flex flex-col items-center justify-end gap-0.5 rounded-lg py-1 text-[10px] font-medium transition-colors ${
+                  pathname.startsWith("/leaderboard")
+                    ? "text-gold"
+                    : "text-muted-foreground hover:bg-accent/70 hover:text-foreground"
+                }`}
+              >
+                <span className="text-lg leading-none" aria-hidden>
+                  🏆
+                </span>
+                <span className="max-w-[4rem] truncate text-center leading-tight">Leaderboard</span>
+              </Link>
+              <Link
+                href="/profile"
+                className={`flex flex-col items-center justify-end gap-0.5 rounded-lg py-1 text-[10px] font-medium transition-colors ${
+                  pathname.startsWith("/profile")
+                    ? "text-primary"
+                    : "text-muted-foreground hover:bg-accent/70 hover:text-foreground"
+                }`}
+              >
+                <span className="text-lg leading-none" aria-hidden>
+                  👤
+                </span>
+                Profile
+              </Link>
+            </div>
+          </div>
+
+          {moreOpen && (
+            <div className="fixed inset-0 z-[95] md:hidden" role="presentation">
+              <button
+                type="button"
+                aria-label="Close menu"
+                className="absolute inset-0 bg-black/65 backdrop-blur-[2px]"
+                onClick={() => setMoreOpen(false)}
               />
-            </svg>
-            Home
-          </Link>
-          <Link
-            href="/practice"
-            className={`flex flex-1 flex-col items-center justify-center gap-0.5 rounded-lg py-1.5 text-[10px] font-medium transition-colors ${
-              pathname.startsWith("/practice") ? "text-primary" : "text-muted-foreground hover:bg-accent/70 hover:text-foreground"
-            }`}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke="currentColor" strokeWidth="1.8" />
-              <path d="M9 8h6M9 12h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
-            Practice
-          </Link>
-          <Link
-            href="/weekly-exam"
-            className={`flex flex-1 flex-col items-center justify-center gap-0.5 rounded-lg py-1.5 text-[10px] font-medium transition-colors ${
-              pathname.startsWith("/weekly-exam") ? "text-gold" : "text-muted-foreground hover:bg-accent/70 hover:text-foreground"
-            }`}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M6 3v3M18 3v3M4 8h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              <rect x="4" y="5" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="1.8" />
-              <path d="M9 13h6M9 17h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
-            Weekly
-          </Link>
-          <Link
-            href="/leaderboard"
-            className={`flex flex-1 flex-col items-center justify-center gap-0.5 rounded-lg py-1.5 text-[10px] font-medium transition-colors ${
-              pathname.startsWith("/leaderboard") ? "text-gold" : "text-muted-foreground hover:bg-accent/70 hover:text-foreground"
-            }`}
-          >
-            <span className="text-lg leading-none" aria-hidden>
-              🏆
-            </span>
-            <span className="max-w-[4rem] truncate text-center leading-tight">Leaderboard</span>
-          </Link>
-          <Link
-            href="/notes"
-            className={`flex flex-1 flex-col items-center justify-center gap-0.5 rounded-lg py-1.5 text-[10px] font-medium transition-colors ${
-              pathname.startsWith("/notes") ? "text-primary" : "text-muted-foreground hover:bg-accent/70 hover:text-foreground"
-            }`}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M4 6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6Z" stroke="currentColor" strokeWidth="1.8" />
-              <path d="M8 8h8M8 12h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
-            Notes
-          </Link>
-          <Link
-            href="/pricing"
-            className={`flex flex-1 flex-col items-center justify-center gap-0.5 rounded-lg py-1.5 text-[10px] font-medium transition-colors ${
-              pathname.startsWith("/pricing") ? "text-primary" : "text-muted-foreground hover:bg-accent/70 hover:text-foreground"
-            }`}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M12 1 3 5v6c0 5 3.3 10.4 9 12 5.7-1.6 9-7 9-12V5l-9-4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-              <path d="M9.5 10.5 11 12l3.5-3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Plans
-          </Link>
-          <Link
-            href="/flashcards"
-            className={`flex flex-1 flex-col items-center justify-center gap-0.5 rounded-lg py-1.5 text-[10px] font-medium transition-colors ${
-              pathname.startsWith("/flashcards") ? "text-primary" : "text-muted-foreground hover:bg-accent/70 hover:text-foreground"
-            }`}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M4 7a2 2 0 0 1 2-2h11a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H6a2 2 0 0 1-2-2V7Z" stroke="currentColor" strokeWidth="1.8" />
-              <path d="M8 10h7M8 14h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
-            Cards
-          </Link>
-          <Link
-            href="/profile"
-            className={`flex flex-1 flex-col items-center justify-center gap-0.5 rounded-lg py-1.5 text-[10px] font-medium transition-colors ${
-              pathname.startsWith("/profile") ? "text-primary" : "text-muted-foreground hover:bg-accent/70 hover:text-foreground"
-            }`}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M20 21a8 8 0 0 0-16 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              <path d="M12 13a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" stroke="currentColor" strokeWidth="1.8" />
-            </svg>
-            Profile
-          </Link>
-          {isAdmin && (
-            <Link
-              href="/admin"
-              className={`flex flex-1 flex-col items-center justify-center gap-0.5 rounded-lg py-1.5 text-[10px] font-medium transition-colors ${
-                pathname.startsWith("/admin") ? "text-gold" : "text-muted-foreground hover:bg-accent/70 hover:text-foreground"
-              }`}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path
-                  d="M12 2 4 6v6c0 5 3 10 8 11 5-1 8-6 8-11V6l-8-4Z"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinejoin="round"
-                />
-                <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </svg>
-              Admin
-            </Link>
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-label="More destinations"
+                className="absolute bottom-0 left-0 right-0 max-h-[85vh] animate-in slide-in-from-bottom-4 fade-in duration-200 rounded-t-3xl border border-border/80 bg-background/98 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 shadow-[0_-20px_50px_-12px_rgba(0,0,0,0.45)] dark:border-gold/20"
+              >
+                <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-muted-foreground/35" aria-hidden />
+                <p className="px-5 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Explore
+                </p>
+                <div className="mt-4 grid grid-cols-2 gap-3 px-4 sm:grid-cols-3">
+                  {drawerItems.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setMoreOpen(false)}
+                      className="flex flex-col items-center gap-2 rounded-2xl border border-border/70 bg-card/80 p-4 text-center shadow-sm transition-colors hover:border-gold/35 hover:bg-accent/40 dark:border-gold/15"
+                    >
+                      <span className="text-2xl" aria-hidden>
+                        {item.icon}
+                      </span>
+                      <span className="text-xs font-semibold leading-tight">{item.label}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
           )}
-        </div>
-      </div>
+        </>
+      )}
     </Fragment>
   );
 }

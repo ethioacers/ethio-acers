@@ -80,7 +80,7 @@ export default function NoteDetailPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-background pb-28 pt-6 md:pb-10">
+      <main className="min-h-screen bg-background pb-24 pt-6 md:pb-10">
         <div className="mx-auto max-w-4xl space-y-6 px-4 sm:px-6">
           <Link
             href="/notes"

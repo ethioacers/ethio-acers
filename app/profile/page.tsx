@@ -180,7 +180,7 @@ export default function ProfilePage() {
     return (
       <>
         <Navbar />
-        <main className="flex min-h-screen items-center justify-center p-4">
+        <main className="flex min-h-screen items-center justify-center p-4 pb-24 md:pb-4">
           <p className="text-muted-foreground">Loading…</p>
         </main>
       </>
@@ -195,7 +195,7 @@ export default function ProfilePage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen p-6">
+      <main className="min-h-screen p-6 pb-24 md:pb-6">
         <div className="mx-auto max-w-lg space-y-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h1 className="text-2xl font-bold">Profile</h1>

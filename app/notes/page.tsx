@@ -291,7 +291,7 @@ export default function NotesPage() {
     return (
       <>
         <Navbar />
-        <main className="flex min-h-screen items-center justify-center bg-background p-6">
+        <main className="flex min-h-screen items-center justify-center bg-background p-6 pb-24 md:pb-6">
           <p className="text-muted-foreground">Loading…</p>
         </main>
       </>
@@ -303,7 +303,7 @@ export default function NotesPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-background pb-28 pt-6 md:pb-10">
+      <main className="min-h-screen bg-background pb-24 pt-6 md:pb-10">
         <div className="mx-auto max-w-4xl space-y-8 px-4 sm:px-6">
           {initError && (
             <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
