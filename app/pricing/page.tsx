@@ -51,10 +51,10 @@ const plans: Plan[] = [
   },
   {
     key: "pro_3mo",
-    name: "Pro 3 Months",
-    price: "150 ETB / 3 months",
+    name: "Pro 2 Months",
+    price: "110 ETB / 2 months",
     badge: "💰 Best Value",
-    subtitle: "Save 86 ETB vs monthly",
+    subtitle: "Save 46 ETB vs monthly",
     features: [
       "Unlimited practice sessions",
       "Unlimited flashcards",
@@ -64,7 +64,7 @@ const plans: Plan[] = [
       "Weekly exams",
       "Priority support",
     ],
-    cta: { label: "Get Pro — 150 ETB/3mo" },
+    cta: { label: "Get Pro — 110 ETB/2mo" },
   },
 ];
 
@@ -88,7 +88,7 @@ export default function PricingPage() {
 
   function getModalPrice(planKey: Plan["key"]) {
     if (planKey === "pro_monthly") return "78 ETB/mo";
-    return "248 ETB/3mo";
+    return "110 ETB/2mo";
   }
 
   async function copyToClipboard(text: string) {
