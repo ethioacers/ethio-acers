@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
+import { AIAssistant } from "@/components/AIAssistant";
 
 export const metadata: Metadata = {
   title: "Ethio Acers",
@@ -17,6 +18,7 @@ export default function RootLayout({
       <body className="min-h-screen antialiased bg-background text-foreground">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           {children}
+          <AIAssistant />
         </ThemeProvider>
       </body>
     </html>

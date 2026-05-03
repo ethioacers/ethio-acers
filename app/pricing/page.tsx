@@ -15,7 +15,7 @@ type Plan = {
   cta: { label: string; href?: string; disabled?: boolean };
 };
 
-const TELEGRAM_CONTACT = "https://t.me/yourusername";
+const TELEGRAM_CONTACT = "https://t.me/GEMTA_1";
 const TELEGRAM_SCREENSHOT = "https://t.me/GEMTA_1";
 
 const plans: Plan[] = [

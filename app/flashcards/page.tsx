@@ -385,7 +385,7 @@ export default function FlashcardsPage() {
                     className="bg-gold text-black hover:bg-gold/90 w-full sm:w-auto"
                   >
                     <a
-                      href="https://t.me/ethioacers"
+                      href="https://t.me/GEMTA_1"
                       target="_blank"
                       rel="noopener noreferrer"
                     >

@@ -490,7 +490,7 @@ export default function PracticePage() {
                     className="bg-gold text-black hover:bg-gold/90"
                   >
                     <a
-                      href="https://t.me/YourTelegramHandle"
+                      href="https://t.me/GEMTA_1"
                       target="_blank"
                       rel="noopener noreferrer"
                     >
