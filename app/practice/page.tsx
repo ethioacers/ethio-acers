@@ -21,6 +21,31 @@ const GRADES = [9, 10, 11, 12];
 const QUESTIONS_PER_SESSION = 10;
 type Mode = "practice" | "exam" | "learn";
 
+/** Fisher–Yates per year bucket; years stay newest-first (do not use random sort comparators). */
+function shuffleQuestionsPreservingYearOrder(questions: Question[]): Question[] {
+  const byYear = new Map<number, Question[]>();
+  for (const q of questions) {
+    const y = q.year != null ? Number(q.year) : Number.NEGATIVE_INFINITY;
+    let bucket = byYear.get(y);
+    if (!bucket) {
+      bucket = [];
+      byYear.set(y, bucket);
+    }
+    bucket.push(q);
+  }
+  const years = [...byYear.keys()].sort((a, b) => b - a);
+  const out: Question[] = [];
+  for (const y of years) {
+    const copy = [...(byYear.get(y) ?? [])];
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    out.push(...copy);
+  }
+  return out;
+}
+
 export default function PracticePage() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
@@ -238,7 +263,7 @@ export default function PracticePage() {
     try {
       const supabase = createClient();
       const isFull = mode === "exam" || mode === "learn";
-      const limit = isFull ? getExamQuestionCount(subjectName) : QUESTIONS_PER_SESSION * 3;
+      const limit = isFull ? getExamQuestionCount(subjectName) : QUESTIONS_PER_SESSION;
       let query = supabase
         .from("questions")
         .select("*")
@@ -251,6 +276,7 @@ export default function PracticePage() {
       if (selectedChapter != null && selectedChapter !== "") {
         query = query.eq("chapter", selectedChapter);
       }
+      query = query.order("year", { ascending: false, nullsFirst: false });
       const { data, error } = await query.limit(limit);
       if (error) {
         setQuestionsError(error.message);
@@ -265,7 +291,7 @@ export default function PracticePage() {
         return;
       }
 
-      const shuffled = all.sort(() => Math.random() - 0.5);
+      const shuffled = shuffleQuestionsPreservingYearOrder(all);
       const toTake = isFull
         ? Math.min(shuffled.length, getExamQuestionCount(subjectName))
         : Math.min(QUESTIONS_PER_SESSION, shuffled.length);
