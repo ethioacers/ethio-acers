@@ -10,6 +10,7 @@ import { StreakCalendar } from "@/components/StreakCalendar";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
 import { fetchMyPointsSummary, type MyPointsSummary } from "@/lib/points";
+import { getTodayRoadmapDay, type RoadmapStatus } from "@/lib/roadmap";
 
 type SessionRow = {
   id: string;
@@ -23,6 +24,19 @@ type SessionRow = {
 
 type WeeklyExamSummary = {
   count: number;
+};
+
+type TodayRoadmapTopic = {
+  id: number;
+  topic: string;
+  estimated_minutes: number | null;
+  day_number: number;
+  subjects?: { name: string } | null;
+};
+
+type TodayRoadmapProgress = {
+  topic_id: number;
+  status: RoadmapStatus;
 };
 
 export default function DashboardPage() {
@@ -42,6 +56,9 @@ export default function DashboardPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [usage, setUsage] = useState<UsageResult | null>(null);
   const [pointsSummary, setPointsSummary] = useState<MyPointsSummary | null>(null);
+  const [todayRoadmapTopics, setTodayRoadmapTopics] = useState<TodayRoadmapTopic[]>([]);
+  const [todayRoadmapProgress, setTodayRoadmapProgress] = useState<Record<number, TodayRoadmapProgress>>({});
+  const [roadmapState, setRoadmapState] = useState<"loading" | "ready" | "none">("loading");
   const [pointsFlash, setPointsFlash] = useState(false);
   const pointsSeenRef = useRef(false);
 
@@ -82,6 +99,53 @@ export default function DashboardPage() {
             setStudentName(profile.full_name || "Student");
             setGrade(profile.grade);
             setSchoolName(profile.school_name || "");
+
+            if (profile.grade) {
+              const { data: gradeTopics } = await supabase
+                .from("roadmap_topics")
+                .select("id, day_number")
+                .eq("grade", profile.grade)
+                .order("day_number", { ascending: true });
+              const allGradeTopics = (gradeTopics as { id: number; day_number: number }[]) ?? [];
+              if (allGradeTopics.length === 0) {
+                setRoadmapState("none");
+              } else {
+                const maxDay = allGradeTopics[allGradeTopics.length - 1]?.day_number ?? 1;
+                const todayDay = getTodayRoadmapDay(maxDay);
+                const { data: todayTopicsRows, error: todayTopicsErr } = await supabase
+                  .from("roadmap_topics")
+                  .select("id, topic, estimated_minutes, day_number, subjects(name)")
+                  .eq("grade", profile.grade)
+                  .eq("day_number", todayDay)
+                  .order("topic_order", { ascending: true });
+                if (todayTopicsErr) {
+                  console.error("dashboard roadmap load error:", todayTopicsErr);
+                  setRoadmapState("none");
+                } else {
+                  const dayTopics = (todayTopicsRows as TodayRoadmapTopic[]) ?? [];
+                  setTodayRoadmapTopics(dayTopics);
+                  if (dayTopics.length > 0) {
+                    const { data: progressRows } = await supabase
+                      .from("roadmap_progress")
+                      .select("topic_id, status")
+                      .eq("user_id", user.id)
+                      .in("topic_id", dayTopics.map((topic) => topic.id));
+                    const progressMap: Record<number, TodayRoadmapProgress> = {};
+                    ((progressRows as TodayRoadmapProgress[]) ?? []).forEach((row) => {
+                      progressMap[row.topic_id] = row;
+                    });
+                    setTodayRoadmapProgress(progressMap);
+                  } else {
+                    setTodayRoadmapProgress({});
+                  }
+                  setRoadmapState("ready");
+                }
+              }
+            } else {
+              setRoadmapState("none");
+            }
+          } else {
+            setRoadmapState("none");
           }
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
@@ -188,6 +252,11 @@ export default function DashboardPage() {
 
   const accuracy =
     totalAttempts > 0 ? Math.round((correctAttempts / totalAttempts) * 100) : 0;
+  const todayCompleted =
+    todayRoadmapTopics.length > 0
+      ? todayRoadmapTopics.filter((topic) => Boolean(todayRoadmapProgress[topic.id])).length
+      : 0;
+  const todayAllDone = todayRoadmapTopics.length > 0 && todayCompleted === todayRoadmapTopics.length;
 
   return (
     <>
@@ -289,6 +358,51 @@ export default function DashboardPage() {
               </p>
               <p className="text-lg sm:text-2xl font-bold text-gold">{totalSessions}</p>
             </div>
+          </div>
+
+          <div className="rounded-2xl border border-gold/35 bg-card/90 p-6 shadow-lg shadow-gold/5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-gold">Today's Learning Path</h2>
+              <Link href="/roadmap" className="text-sm font-medium text-primary hover:underline">
+                Go to Roadmap →
+              </Link>
+            </div>
+            {roadmapState === "none" ? (
+              <p className="mt-3 text-sm text-muted-foreground">Roadmap coming soon!</p>
+            ) : roadmapState === "loading" ? (
+              <p className="mt-3 text-sm text-muted-foreground">Loading today's topics...</p>
+            ) : todayRoadmapTopics.length === 0 ? (
+              <p className="mt-3 text-sm text-muted-foreground">Roadmap coming soon!</p>
+            ) : (
+              <div className="mt-4 space-y-2">
+                {todayRoadmapTopics.map((topic) => {
+                  const progress = todayRoadmapProgress[topic.id];
+                  return (
+                    <div key={topic.id} className="rounded-xl border border-border/70 bg-background/40 p-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground">
+                          {topic.subjects?.name ?? "Subject"}
+                        </span>
+                        <span className="text-sm font-semibold">{topic.topic}</span>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        ~{topic.estimated_minutes ?? 15} min ·{" "}
+                        {progress
+                          ? progress.status === "fully_understand"
+                            ? "Fully understand"
+                            : progress.status === "medium"
+                              ? "Medium"
+                              : "Needs attention"
+                          : "Not started"}
+                      </p>
+                    </div>
+                  );
+                })}
+                {todayAllDone && (
+                  <p className="pt-2 text-sm font-medium text-gold">🎉 All done for today! Come back tomorrow.</p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Quick actions */}

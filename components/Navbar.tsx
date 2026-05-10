@@ -9,6 +9,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 const DESKTOP_NAV_LINKS = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/practice", label: "Practice" },
+  { href: "/roadmap", label: "🗺️ Roadmap" },
   { href: "/weekly-exam", label: "Weekly" },
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/notes", label: "Notes" },
@@ -24,6 +25,7 @@ const MORE_ITEMS: {
 }[] = [
   { href: "/notes", icon: "📖", label: "Notes" },
   { href: "/flashcards", icon: "🃏", label: "Flashcards" },
+  { href: "/roadmap", icon: "🗺️", label: "Roadmap" },
   { href: "/weekly-exam", icon: "📅", label: "Weekly Exam" },
   { href: "/pricing", icon: "💰", label: "Plans" },
   { href: "/friends", icon: "👥", label: "Friends" },
@@ -208,7 +210,7 @@ export function Navbar() {
       {showMobileBottom && (
         <>
           <div className="fixed bottom-0 left-0 right-0 z-[90] border-t border-border/80 bg-background/98 pb-[env(safe-area-inset-bottom)] pt-1 shadow-[0_-10px_40px_-12px_rgba(0,0,0,0.15)] backdrop-blur-xl supports-[backdrop-filter]:bg-background/90 md:hidden dark:border-primary/20 dark:shadow-[0_-12px_40px_-12px_rgba(0,0,0,0.55)]">
-            <div className="mx-auto grid max-w-md grid-cols-5 items-end gap-0 px-2 pb-1 pt-1">
+            <div className="mx-auto grid max-w-md grid-cols-6 items-end gap-0 px-2 pb-1 pt-1">
               <Link
                 href="/dashboard"
                 className={`flex flex-col items-center justify-end gap-0.5 rounded-lg py-1 text-[10px] font-medium transition-colors ${
@@ -234,6 +236,19 @@ export function Navbar() {
                   📝
                 </span>
                 Practice
+              </Link>
+              <Link
+                href="/roadmap"
+                className={`flex flex-col items-center justify-end gap-0.5 rounded-lg py-1 text-[10px] font-medium transition-colors ${
+                  pathname.startsWith("/roadmap")
+                    ? "text-gold"
+                    : "text-muted-foreground hover:bg-accent/70 hover:text-foreground"
+                }`}
+              >
+                <span className="text-lg leading-none" aria-hidden>
+                  🗺️
+                </span>
+                Roadmap
               </Link>
               <div className="flex flex-col items-center justify-end pb-0.5">
                 <button
