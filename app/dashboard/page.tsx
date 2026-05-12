@@ -31,7 +31,7 @@ type TodayRoadmapTopic = {
   topic: string;
   estimated_minutes: number | null;
   day_number: number;
-  subjects?: { name: string } | null;
+  subjects?: { name: string }[] | { name: string } | null;
 };
 
 type TodayRoadmapProgress = {
@@ -381,7 +381,7 @@ export default function DashboardPage() {
                     <div key={topic.id} className="rounded-xl border border-border/70 bg-background/40 p-3">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground">
-                          {topic.subjects?.name ?? "Subject"}
+                          {(Array.isArray(topic.subjects) ? topic.subjects[0]?.name : topic.subjects?.name) ?? "Subject"}
                         </span>
                         <span className="text-sm font-semibold">{topic.topic}</span>
                       </div>
