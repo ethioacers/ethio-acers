@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
@@ -41,7 +41,7 @@ export default function RoadmapPage() {
   const [progressMap, setProgressMap] = useState<Record<number, TopicProgress>>({});
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Daily checkbox state (local only — resets on refresh)
+  // Daily checkbox state (persisted to daily_checklist table)
   const [checkedTopics, setCheckedTopics] = useState<Set<number>>(new Set());
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const streakUpdatedRef = useRef(false);
@@ -64,6 +64,14 @@ export default function RoadmapPage() {
           return;
         }
         setUserId(user.id);
+
+        // Fetch persisted checklist
+        const { data: checklistData } = await supabase
+          .from("daily_checklist")
+          .select("topic_id")
+          .eq("user_id", user.id);
+        const checkedIds = new Set((checklistData as { topic_id: number }[] | null)?.map((r) => r.topic_id) ?? []);
+        setCheckedTopics(checkedIds);
 
         const [{ data: profileData }, { data: subjectData }] = await Promise.all([
           supabase.from("profiles").select("grade").eq("id", user.id).single(),
@@ -164,18 +172,49 @@ export default function RoadmapPage() {
   const maxDay = grouped[grouped.length - 1]?.[0] ?? 1;
   const todayDay = getTodayRoadmapDay(maxDay);
 
-  // Toggle checkbox for a topic
-  function toggleCheck(topicId: number) {
+  // Toggle checkbox for a topic (persisted to daily_checklist)
+  const toggleCheck = useCallback(async (topicId: number) => {
+    if (!userId) return;
+    const supabase = createClient();
+    const wasChecked = checkedTopics.has(topicId);
+
+    // Optimistic update
     setCheckedTopics((prev) => {
       const next = new Set(prev);
-      if (next.has(topicId)) {
+      if (wasChecked) {
         next.delete(topicId);
       } else {
         next.add(topicId);
       }
       return next;
     });
-  }
+
+    try {
+      if (wasChecked) {
+        await supabase
+          .from("daily_checklist")
+          .delete()
+          .eq("user_id", userId)
+          .eq("topic_id", topicId);
+      } else {
+        await supabase
+          .from("daily_checklist")
+          .insert({ user_id: userId, topic_id: topicId });
+      }
+    } catch (err) {
+      console.error("Failed to update checklist:", err);
+      // Revert optimistic update on error
+      setCheckedTopics((prev) => {
+        const next = new Set(prev);
+        if (wasChecked) {
+          next.add(topicId);
+        } else {
+          next.delete(topicId);
+        }
+        return next;
+      });
+    }
+  }, [userId, checkedTopics]);
 
   // Check if all today's topics are checked and update streak
   useEffect(() => {
