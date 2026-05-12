@@ -423,6 +423,9 @@ export default function RoadmapPage() {
                                     <span className="rounded-full border border-border px-2 py-1 text-muted-foreground">
                                       {(Array.isArray(topic.subjects) ? topic.subjects[0]?.name : topic.subjects?.name) ?? "Subject"}
                                     </span>
+                                    <span className="rounded-full border border-border px-2 py-1 text-muted-foreground">
+                                      Grade {topic.grade}
+                                    </span>
                                   </div>
                                   <p className="mt-2 text-sm text-muted-foreground">~{topic.estimated_minutes ?? 15} min</p>
                                   {progress?.score != null && progress?.total != null && (
