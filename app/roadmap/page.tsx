@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
@@ -39,6 +39,12 @@ export default function RoadmapPage() {
   const [selectedGrade, setSelectedGrade] = useState<number | "">("");
   const [topics, setTopics] = useState<RoadmapTopic[]>([]);
   const [progressMap, setProgressMap] = useState<Record<number, TopicProgress>>({});
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Daily checkbox state (local only — resets on refresh)
+  const [checkedTopics, setCheckedTopics] = useState<Set<number>>(new Set());
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const streakUpdatedRef = useRef(false);
 
   useEffect(() => {
     async function init() {
@@ -57,6 +63,7 @@ export default function RoadmapPage() {
           router.replace("/login");
           return;
         }
+        setUserId(user.id);
 
         const [{ data: profileData }, { data: subjectData }] = await Promise.all([
           supabase.from("profiles").select("grade").eq("id", user.id).single(),
@@ -157,6 +164,76 @@ export default function RoadmapPage() {
   const maxDay = grouped[grouped.length - 1]?.[0] ?? 1;
   const todayDay = getTodayRoadmapDay(maxDay);
 
+  // Toggle checkbox for a topic
+  function toggleCheck(topicId: number) {
+    setCheckedTopics((prev) => {
+      const next = new Set(prev);
+      if (next.has(topicId)) {
+        next.delete(topicId);
+      } else {
+        next.add(topicId);
+      }
+      return next;
+    });
+  }
+
+  // Check if all today's topics are checked and update streak
+  useEffect(() => {
+    if (streakUpdatedRef.current) return;
+    const todayGroup = grouped.find(([day]) => day === todayDay);
+    if (!todayGroup) return;
+    const todayTopicIds = todayGroup[1].map((t) => t.id);
+    if (todayTopicIds.length === 0) return;
+    const allChecked = todayTopicIds.every((id) => checkedTopics.has(id));
+    if (!allChecked) return;
+
+    // All today's topics are checked — update streak
+    streakUpdatedRef.current = true;
+
+    async function updateStreak() {
+      if (!userId) return;
+      try {
+        const supabase = createClient();
+        const today = new Date().toISOString().split("T")[0];
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("current_streak, last_session_date")
+          .eq("id", userId)
+          .single();
+
+        const lastDate = profile?.last_session_date;
+
+        // If streak was already updated today, do nothing
+        if (lastDate === today) {
+          setToastMessage("🔥 Day Complete! Your streak was already updated today!");
+          return;
+        }
+
+        const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+        const newStreak = lastDate === yesterday ? (profile?.current_streak ?? 0) + 1 : 1;
+
+        await supabase
+          .from("profiles")
+          .update({ current_streak: newStreak, last_session_date: today })
+          .eq("id", userId);
+
+        setToastMessage("🔥 Day Complete! Your streak has been updated!");
+      } catch (err) {
+        console.error("Failed to update streak:", err);
+        setToastMessage("🔥 Day Complete! (streak update failed)");
+      }
+    }
+
+    updateStreak();
+  }, [checkedTopics, grouped, todayDay, userId]);
+
+  // Auto-dismiss toast after 3 seconds
+  useEffect(() => {
+    if (!toastMessage) return;
+    const timer = setTimeout(() => setToastMessage(null), 3000);
+    return () => clearTimeout(timer);
+  }, [toastMessage]);
+
   function motivationalMessage() {
     if (percent === 0) return "Start your learning journey today! 🚀";
     if (percent <= 33) return "Great start! Keep going 💪";
@@ -234,6 +311,10 @@ export default function RoadmapPage() {
             <section className="space-y-6 animate-in fade-in duration-500">
               {grouped.map(([dayNumber, dayTopics]) => {
                 const isToday = dayNumber === todayDay;
+                const dayCheckedCount = dayTopics.filter((t) => checkedTopics.has(t.id)).length;
+                const dayTotal = dayTopics.length;
+                const dayAllDone = dayCheckedCount === dayTotal && dayTotal > 0;
+                const dayPercent = dayTotal > 0 ? Math.round((dayCheckedCount / dayTotal) * 100) : 0;
                 return (
                   <div
                     key={dayNumber}
@@ -244,12 +325,42 @@ export default function RoadmapPage() {
                         : "border-border/70",
                     ].join(" ")}
                   >
-                    <h2 className="mb-4 text-lg font-semibold text-gold">Day {dayNumber}</h2>
+                    {/* Day header with progress */}
+                    <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                      <h2 className="text-lg font-semibold text-gold">
+                        Day {dayNumber}
+                        <span className="ml-2 text-sm font-normal text-muted-foreground">
+                          — {dayCheckedCount}/{dayTotal} done
+                        </span>
+                      </h2>
+                      {dayAllDone && (
+                        <span className="text-sm font-semibold text-green-500">✅ Complete!</span>
+                      )}
+                    </div>
+
+                    {/* Gold progress bar for today's section */}
+                    {isToday && (
+                      <div className="mb-4 space-y-1">
+                        <div className="h-2 overflow-hidden rounded-full bg-muted">
+                          <div
+                            className={[
+                              "h-full transition-all duration-500",
+                              dayAllDone
+                                ? "bg-green-500"
+                                : "bg-gold",
+                            ].join(" ")}
+                            style={{ width: `${dayPercent}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     <div className="space-y-4">
                       {dayTopics.map((topic, idx) => {
                         const progress = progressMap[topic.id];
                         const status = progress?.status;
                         const started = Boolean(progress);
+                        const isChecked = checkedTopics.has(topic.id);
                         const statusStyle =
                           status === "fully_understand"
                             ? "bg-green-500"
@@ -265,35 +376,70 @@ export default function RoadmapPage() {
                               <span className={`mt-1 h-4 w-4 rounded-full ring-2 ring-background ${statusStyle}`} />
                               {idx < dayTopics.length - 1 && <span className={`mt-1 h-full w-0.5 ${lineStyle}`} />}
                             </div>
-                            <div className="rounded-xl border border-border/70 bg-background/40 p-4">
-                              <div className="flex flex-wrap items-center justify-between gap-2">
-                                <p className="text-base font-bold">{topic.topic}</p>
-                                {status === "needs_attention" && (
-                                  <span className="inline-flex h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />
-                                )}
-                              </div>
-                              <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                                <span className="rounded-full border border-gold/40 px-2 py-1 text-gold">
-                                  {topic.unit}
-                                </span>
-                                <span className="rounded-full border border-border px-2 py-1 text-muted-foreground">
-                                  {(Array.isArray(topic.subjects) ? topic.subjects[0]?.name : topic.subjects?.name) ?? "Subject"}
-                                </span>
-                              </div>
-                              <p className="mt-2 text-sm text-muted-foreground">~{topic.estimated_minutes ?? 15} min</p>
-                              {progress?.score != null && progress?.total != null && (
-                                <p className="mt-1 text-sm text-muted-foreground">
-                                  {progress.score}/{progress.total} correct
-                                </p>
-                              )}
-                              <div className="mt-3">
-                                <Button
-                                  asChild
-                                  variant={started ? "outline" : "default"}
-                                  className={started ? "" : "bg-gold text-black hover:bg-gold/90"}
+                            <div
+                              className={[
+                                "rounded-xl border p-4 transition-colors duration-300",
+                                isChecked
+                                  ? "border-green-500/40 bg-green-500/5"
+                                  : "border-border/70 bg-background/40",
+                              ].join(" ")}
+                            >
+                              <div className="flex items-start gap-3">
+                                {/* Checkbox */}
+                                <button
+                                  type="button"
+                                  onClick={() => toggleCheck(topic.id)}
+                                  className={[
+                                    "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200",
+                                    isChecked
+                                      ? "border-green-500 bg-green-500 text-white"
+                                      : "border-muted-foreground/40 bg-transparent hover:border-gold/60",
+                                  ].join(" ")}
+                                  aria-label={isChecked ? `Uncheck ${topic.topic}` : `Check ${topic.topic}`}
                                 >
-                                  <Link href={`/roadmap/${topic.id}`}>{started ? "Redo" : "Start"}</Link>
-                                </Button>
+                                  {isChecked && (
+                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                      <path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                  )}
+                                </button>
+
+                                <div className="flex-1">
+                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <p className={[
+                                      "text-base font-bold transition-colors duration-200",
+                                      isChecked ? "text-green-500/80 line-through" : "",
+                                    ].join(" ")}>
+                                      {topic.topic}
+                                    </p>
+                                    {status === "needs_attention" && (
+                                      <span className="inline-flex h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />
+                                    )}
+                                  </div>
+                                  <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                                    <span className="rounded-full border border-gold/40 px-2 py-1 text-gold">
+                                      {topic.unit}
+                                    </span>
+                                    <span className="rounded-full border border-border px-2 py-1 text-muted-foreground">
+                                      {(Array.isArray(topic.subjects) ? topic.subjects[0]?.name : topic.subjects?.name) ?? "Subject"}
+                                    </span>
+                                  </div>
+                                  <p className="mt-2 text-sm text-muted-foreground">~{topic.estimated_minutes ?? 15} min</p>
+                                  {progress?.score != null && progress?.total != null && (
+                                    <p className="mt-1 text-sm text-muted-foreground">
+                                      {progress.score}/{progress.total} correct
+                                    </p>
+                                  )}
+                                  <div className="mt-3">
+                                    <Button
+                                      asChild
+                                      variant={started ? "outline" : "default"}
+                                      className={started ? "" : "bg-gold text-black hover:bg-gold/90"}
+                                    >
+                                      <Link href={`/roadmap/${topic.id}`}>{started ? "Redo" : "Start"}</Link>
+                                    </Button>
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -307,6 +453,15 @@ export default function RoadmapPage() {
           )}
         </div>
       </main>
+
+      {/* Toast notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 animate-in slide-in-from-bottom-4 fade-in duration-300">
+          <div className="rounded-2xl border border-gold/50 bg-card px-6 py-4 shadow-[0_0_32px_-8px_rgba(250,204,21,0.5)]">
+            <p className="text-sm font-semibold text-gold">{toastMessage}</p>
+          </div>
+        </div>
+      )}
     </>
   );
 }
