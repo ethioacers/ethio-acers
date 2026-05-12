@@ -16,7 +16,7 @@ type TopicRow = {
   unit: string;
   grade: number;
   subject_id: number;
-  subjects?: { name: string } | null;
+  subjects?: { name: string }[] | { name: string } | null;
 };
 
 export default function RoadmapTopicPage() {
@@ -180,7 +180,7 @@ export default function RoadmapTopicPage() {
             <header className="space-y-2 rounded-2xl border border-border/70 bg-card/90 p-5">
               <h1 className="text-2xl font-bold">{topic.topic}</h1>
               <p className="text-sm text-muted-foreground">
-                {topic.unit} · {topic.subjects?.name ?? "Subject"}
+                {topic.unit} · {(Array.isArray(topic.subjects) ? topic.subjects[0]?.name : topic.subjects?.name) ?? "Subject"}
               </p>
             </header>
           )}
@@ -263,7 +263,7 @@ export default function RoadmapTopicPage() {
                 selectedAnswer={selectedAnswer}
                 showResult={showResult}
                 isCorrect={selectedAnswer ? currentQuestion.correct_answer === selectedAnswer : null}
-                subject={topic?.subjects?.name ?? "Subject"}
+                subject={(Array.isArray(topic?.subjects) ? topic.subjects[0]?.name : topic?.subjects?.name) ?? "Subject"}
               />
               {showResult && (
                 <Button className="w-full sm:w-auto" onClick={next}>

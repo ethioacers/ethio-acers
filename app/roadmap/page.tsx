@@ -18,7 +18,7 @@ type RoadmapTopic = {
   day_number: number;
   topic_order: number;
   estimated_minutes: number;
-  subjects?: { name: string } | null;
+  subjects?: { name: string }[] | { name: string } | null;
 };
 
 type TopicProgress = {
@@ -277,7 +277,7 @@ export default function RoadmapPage() {
                                   {topic.unit}
                                 </span>
                                 <span className="rounded-full border border-border px-2 py-1 text-muted-foreground">
-                                  {topic.subjects?.name ?? "Subject"}
+                                  {(Array.isArray(topic.subjects) ? topic.subjects[0]?.name : topic.subjects?.name) ?? "Subject"}
                                 </span>
                               </div>
                               <p className="mt-2 text-sm text-muted-foreground">~{topic.estimated_minutes ?? 15} min</p>
